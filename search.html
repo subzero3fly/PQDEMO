@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PredictIQ — Search</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-row">
+    <a class="icon-btn" href="index.html" aria-label="Back">
+      <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+    <div class="search-field" style="flex:1;">
+      <svg class="icon" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8"/><path d="M20 20l-4.3-4.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <input type="text" id="searchInput" placeholder="Search PredictIQ markets…" autofocus autocomplete="off" oninput="onSearchInput(this.value)">
+    </div>
+    <details class="profile-menu">
+      <summary aria-label="Account menu"><span class="avatar avatar-sm"></span></summary>
+      <div class="profile-panel">
+        <div class="profile-id"><span class="addr" id="panelAccountId">0xeA4A867c01…</span></div>
+        <div class="profile-links">
+          <a href="#">Support</a>
+          <a href="#">Help Center</a>
+        </div>
+        <a class="logout-btn" href="#">Logout</a>
+      </div>
+    </details>
+  </div>
+</header>
+
+<main class="page">
+
+  <!-- Search results (shown when user types) -->
+  <div id="searchResultsWrap" style="display:none;margin-top:14px;">
+    <div class="eyebrow" id="searchResultsLabel">Results</div>
+    <div class="card-grid" id="searchResultsGrid" style="margin-top:8px;"></div>
+    <div id="searchNoResults" style="display:none;text-align:center;padding:40px 20px;color:var(--text-faint);">
+      <p style="font-size:15px;font-weight:600;margin-bottom:6px;">No markets found</p>
+      <p style="font-size:13.5px;">Try a different search term.</p>
+    </div>
+  </div>
+
+  <!-- Default browse view (hidden when searching) -->
+  <div id="browseWrap">
+  <div class="eyebrow" style="margin-top:18px;">Browse</div>
+  <div class="browse-row">
+    <a class="browse-chip" href="#" data-sort="new" onclick="setBrowse(event,this)">
+      <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+      New
+    </a>
+    <a class="browse-chip" href="#" data-sort="trending" onclick="setBrowse(event,this)">
+      <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M3 17l6-6 4 4 7-8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 7h4v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Trending
+    </a>
+    <a class="browse-chip" href="#" data-sort="popular" onclick="setBrowse(event,this)">
+      <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 21c4 0 6-2.5 6-6 0-3-2-4.5-3-7-.5 2-2 3-2 5 0-3-1.5-5-3-6.5C9.5 8 8 9.5 8 12c0 0-2 1.5-2 4 0 3.5 2.5 5 6 5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+      Popular
+    </a>
+    <a class="browse-chip" href="#" data-sort="liquid" onclick="setBrowse(event,this)">
+      <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 3c3 4 6 7.5 6 11a6 6 0 1 1-12 0c0-3.5 3-7 6-11Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      Liquid
+    </a>
+    <a class="browse-chip" href="#" data-sort="ending" onclick="setBrowse(event,this)">
+      <svg class="icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M12 7v5l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Ending Soon
+    </a>
+    <a class="browse-chip" href="#" data-sort="competitive" onclick="setBrowse(event,this)">
+      <svg class="icon" viewBox="0 0 24 24" fill="none"><rect x="5" y="7" width="14" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M9 7V5a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.4"/><circle cx="9.5" cy="12.5" r="1" fill="currentColor"/><circle cx="14.5" cy="12.5" r="1" fill="currentColor"/></svg>
+      Competitive
+    </a>
+  </div>
+
+  <div class="eyebrow">Topics</div>
+  <div class="topic-grid">
+    <a class="topic-card" href="#" data-cat="crypto" onclick="goTopic(event,'crypto')">
+      <span class="t-icon" style="background:linear-gradient(135deg,#ff7a59,#ffb259);">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="#1a0e08"><path d="M4 15l5-6 4 4 7-9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      Live Crypto
+    </a>
+    <a class="topic-card" href="#" data-cat="politics" onclick="goTopic(event,'politics')">
+      <span class="t-icon" style="background:linear-gradient(135deg,#3a4a6b,#1c2438);">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="#fff"><path d="M4 10h16M5 10v9M9 10v9M15 10v9M19 10v9M3 21h18M12 3 4 8h16L12 3Z" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      </span>
+      Politics
+    </a>
+    <a class="topic-card" href="#" data-cat="geopolitics" onclick="goTopic(event,'geopolitics')">
+      <span class="t-icon" style="background:linear-gradient(135deg,#2dbf9e,#1a8a73);">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="#06231c"><circle cx="12" cy="12" r="9" stroke-width="1.5"/><path d="M3 12h18M12 3a13 13 0 0 1 0 18M12 3a13 13 0 0 0 0 18" stroke-width="1.2"/></svg>
+      </span>
+      Middle East
+    </a>
+    <a class="topic-card" href="#" data-cat="crypto" onclick="goTopic(event,'crypto')">
+      <span class="t-icon" style="background:linear-gradient(135deg,#f2b341,#c98a1f);">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="#2b1d05"><circle cx="12" cy="12" r="9" stroke-width="1.6"/><path d="M10 8h3.2a2 2 0 0 1 0 4H10m0 0h3.6a2 2 0 0 1 0 4H10V8Z" stroke-width="1.3" stroke-linejoin="round"/></svg>
+      </span>
+      Crypto
+    </a>
+    <a class="topic-card" href="#" data-cat="sports" onclick="goTopic(event,'sports')">
+      <span class="t-icon" style="background:linear-gradient(135deg,#4d8dff,#2b5fd9);">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="#06122b"><circle cx="12" cy="12" r="9" stroke-width="1.6"/><path d="M9 9.5l3 2.5 3-2.5M9 16l3-2.5 3 2.5M5 12h2m10 0h2" stroke-width="1.3" stroke-linejoin="round"/></svg>
+      </span>
+      Sports
+    </a>
+    <a class="topic-card" href="#" data-cat="culture" onclick="goTopic(event,'culture')">
+      <span class="t-icon" style="background:linear-gradient(135deg,#b07cff,#7c4fd9);">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="#1c0e33"><path d="M12 3l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L5 8.3l5-.7L12 3Z" stroke-width="1.4" stroke-linejoin="round"/></svg>
+      </span>
+      Pop Culture
+    </a>
+    <a class="topic-card" href="#" data-cat="tech" onclick="goTopic(event,'tech')">
+      <span class="t-icon" style="background:linear-gradient(135deg,#5b6472,#343a44);">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="#fff"><rect x="7" y="7" width="10" height="10" rx="1.5" stroke-width="1.4"/><path d="M9 3v2M15 3v2M9 19v2M15 19v2M3 9h2M3 15h2M19 9h2M19 15h2" stroke-width="1.3" stroke-linecap="round"/></svg>
+      </span>
+      Tech
+    </a>
+    <a class="topic-card" href="#" data-cat="tech" onclick="goTopic(event,'tech')">
+      <span class="t-icon" style="background:linear-gradient(135deg,#7c5cff,#4d35b3);">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="#fff"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" stroke-width="1.4" stroke-linejoin="round"/></svg>
+      </span>
+      AI
+    </a>
+  </div>
+
+</main>
+
+  </div><!-- /browseWrap -->
+
+<nav class="tab-bar" aria-label="Primary">
+  <a href="index.html">
+    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M4 11.5 12 4l8 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-5h4v5h3a1 1 0 0 0 1-1v-9" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+    Home
+  </a>
+  <a class="is-active" href="search.html">
+    <svg class="icon" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8"/><path d="M20 20l-4.3-4.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    Search
+  </a>
+  <a href="breaking.html">
+    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M3 12h4l2 7 4-14 2 7h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Breaking
+  </a>
+  <a href="copytrade.html">
+    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    Copy
+  </a>
+  <a href="portfolio.html">
+    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    $0.00
+  </a>
+</nav>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="profile-socials">
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3l8.5 9.6L3.6 21h2.4l6.7-7.4L18 21h3l-9-10.1L20.4 3H18l-6.2 6.9L7 3H3Z"/></svg>
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M19 5.5c-1.1-.5-2.3-.9-3.5-1.1l-.2.4c1.1.3 2.1.7 3 1.3-2.6-1.2-5.6-1.2-8.2 0 .9-.6 1.9-1 3-1.3l-.2-.4C11.7 4.4 10.5 4.8 9.4 5.3 6.9 8.1 6.2 11 6.5 13.8a10.4 10.4 0 0 0 3.2 1.6l.5-.9c-.6-.2-1.1-.5-1.6-.8.4.2.9.4 1.4.6 2 .8 4.2.8 6.2 0 .5-.2 1-.4 1.4-.6-.5.3-1 .6-1.6.8l.5.9a10.4 10.4 0 0 0 3.2-1.6c.4-3.3-.5-6.2-2.7-8.3ZM10.6 12.3c-.6 0-1.1-.6-1.1-1.3s.5-1.3 1.1-1.3 1.1.6 1.1 1.3-.5 1.3-1.1 1.3Zm4.8 0c-.6 0-1.1-.6-1.1-1.3s.5-1.3 1.1-1.3 1.1.6 1.1 1.3-.5 1.3-1.1 1.3Z"/></svg>
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><circle cx="17.2" cy="6.8" r="1" fill="currentColor"/></svg>
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M14.5 2h2.7c.2 1.6 1.2 3 3.3 3.2v2.7c-1.3 0-2.4-.4-3.3-1v6.4a5 5 0 1 1-5-5c.3 0 .6 0 .9.1v2.8a2.3 2.3 0 1 0 1.6 2.2V2Z"/></svg>
+    </div>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="#">Accuracy</a><a href="#" onclick="if(typeof smartsupp==='function'){smartsupp('chat','open');return false;}">Support</a><a href="#">Status</a><a href="#">Terms of Use</a>
+    </nav>
+    <span style="font-size:12px;color:var(--text-faint);">© 2026 PredictIQ</span>
+  </div>
+</footer>
+
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="prediction-engine.js"></script>
+<script>
+function fmtBal(n) {
+  return '$' + (parseFloat(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+auth.onAuthStateChanged(async function(user) {
+  if (!user) { window.location.href = 'login.html'; return; }
+  predictionEngine.start();
+
+  try {
+    var snap = await db.collection('users').doc(user.uid).get();
+
+    // Recovery: if doc missing, recreate it
+    if (!snap.exists) {
+      var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', rand = '';
+      for (var i=0;i<8;i++) rand += chars[Math.floor(Math.random()*chars.length)];
+      await db.collection('users').doc(user.uid).set({
+        fullName: user.displayName || user.email.split('@')[0] || 'User',
+        email: user.email||'', phone:'', accountId:'PIQ-'+rand, balance:0,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      snap = await db.collection('users').doc(user.uid).get();
+    }
+
+    var ud = snap.data() || {};
+    var bal = fmtBal(ud.balance);
+    var initials = (ud.fullName||'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    if (typeof smartsupp === 'function') { smartsupp('name', ud.fullName||'User'); smartsupp('email', ud.email||''); }
+
+    // Header balance-pair .b-value spans
+    var bvals = document.querySelectorAll('.balance-pair .b-value');
+    bvals.forEach(function(el){ el.textContent = bal; });
+
+    // Tab bar portfolio link — contains the $0.00 text node
+    document.querySelectorAll('.tab-bar a').forEach(function(a){
+      if (a.getAttribute('href') === 'portfolio.html') {
+        // Replace the text node (last child) with real balance
+        var nodes = a.childNodes;
+        for (var i = nodes.length-1; i >= 0; i--) {
+          if (nodes[i].nodeType === 3 && nodes[i].textContent.trim()) {
+            nodes[i].textContent = '
+    ' + bal + '
+  ';
+            break;
+          }
+        }
+      }
+    });
+
+    // Avatar initials
+    var av = document.querySelector('.profile-menu .avatar, #headerAvatar');
+    if (av) av.textContent = initials;
+
+    // Profile panel name and account ID
+    var pname = document.querySelector('#panelName');
+    var paddr = document.querySelector('#panelAccountId, .profile-panel .addr');
+    if (pname) pname.textContent = ud.fullName || 'User';
+    if (paddr) paddr.textContent = ud.accountId || '';
+
+    // Logout button
+    document.querySelectorAll('.logout-btn').forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        e.preventDefault();
+        auth.signOut().then(function(){ window.location.href = 'login.html'; });
+      });
+    });
+  } catch(e) {
+    console.warn('Auth balance error:', e);
+    window.location.href = 'login.html';
+  }
+});
+</script>
+
+
+<script>
+// ── Search page market logic ───────────────────────────────────────────────
+var allMarkets  = [];
+var currentSort = 'new';
+var searchTimer = null;
+
+var CAT_ICONS_PATHS = {
+  politics:    '<path d="M3 21h18M5 21V7l7-5 7 5v14" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  sports:      '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 3a14.5 14.5 0 0 0 0 18M3 12h18" stroke="currentColor" stroke-width="1.4"/>',
+  esports:     '<rect x="2" y="6" width="20" height="12" rx="3" stroke="currentColor" stroke-width="1.6"/>',
+  finance:     '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  geopolitics: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M15 9l-2 6-6 2 2-6 6-2Z" stroke="currentColor" stroke-width="1.4"/>',
+  tech:        '<rect x="2" y="4" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/>',
+  culture:     '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/>',
+  economy:     '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke="currentColor" stroke-width="1.6"/>',
+  crypto:      '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M9.5 8.5h3a2 2 0 1 1 0 4h-4a2 2 0 1 0 0 4h3.5M12 6v12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>'
+};
+var DEFAULT_ICON_PATH = '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/>';
+
+function volFmt(v) {
+  v = parseFloat(v)||0;
+  if (v>=1e9) return '$'+(v/1e9).toFixed(1)+'B';
+  if (v>=1e6) return '$'+(v/1e6).toFixed(1)+'M';
+  if (v>=1000) return '$'+(v/1000).toFixed(0)+'K';
+  return '$'+v.toFixed(0);
+}
+
+function buildCard(m) {
+  var id   = m.id;
+  var prob = Math.round(m.currentProbability || m.startingProbability || 50);
+  var no   = 100 - prob;
+  var vol  = volFmt(m.totalVolume||0);
+  var cat  = m.category||'general';
+  var icon = CAT_ICONS_PATHS[cat] || DEFAULT_ICON_PATH;
+  var url  = 'market-detail.html?id=' + id;
+  var isBinary = m.marketType === 'binary' || !m.outcomes || m.outcomes.length <= 2;
+  var inner = '<div class="m-card-head">';
+  inner += '<span class="m-card-icon"><svg class="icon-sm" viewBox="0 0 24 24" fill="none">' + icon + '</svg></span>';
+  inner += '<span class="m-card-title">' + (m.question||'Untitled') + '</span>';
+  if (isBinary) {
+    inner += '<div style="flex-shrink:0;width:44px;height:44px;background:conic-gradient(var(--yes) calc('+prob+'*1%),var(--border) 0);border-radius:50%;position:relative;">';
+    inner += '<span style="position:absolute;inset:7px;background:var(--surface);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text);">'+prob+'%</span></div>';
+  }
+  inner += '</div>';
+  if (isBinary) {
+    inner += '<div style="margin:10px 0 8px;"><div style="height:6px;background:var(--border);border-radius:99px;overflow:hidden;margin-bottom:5px;"><div style="height:100%;width:'+prob+'%;background:var(--yes);border-radius:99px;"></div></div>';
+    inner += '<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;"><span style="color:var(--yes);">YES '+prob+'%</span><span style="color:var(--no);">NO '+no+'%</span></div></div>';
+    inner += '<div class="m-card-actions"><button class="chip chip-yes" onclick="event.preventDefault();location.href=\''+url+'&side=YES\'">Yes</button><button class="chip chip-no" onclick="event.preventDefault();location.href=\''+url+'&side=NO\'">No</button></div>';
+  } else {
+    inner += '<div class="outcome-list">';
+    (m.outcomes||[]).slice(0,3).forEach(function(o){
+      inner += '<div class="outcome-row"><span class="outcome-name">'+(o.name||'')+'</span><span class="outcome-pct">'+(o.probability||0)+'%</span>';
+      inner += '<span class="chip-row"><span class="chip chip-yes" style="cursor:pointer;" onclick="event.preventDefault();location.href=\''+url+'\'">Yes</span>';
+      inner += '<span class="chip chip-no" style="cursor:pointer;" onclick="event.preventDefault();location.href=\''+url+'\'">No</span></span></div>';
+    });
+    inner += '</div>';
+  }
+  inner += '<div class="m-card-foot"><span class="vol"><b>'+vol+'</b> Vol.</span></div>';
+  return '<article class="m-card" style="cursor:pointer;" onclick="location.href=\''+url+'\'">' + inner + '</article>';
+}
+
+function sortMarkets(list, sort) {
+  var copy = list.slice();
+  if (sort === 'new') {
+    copy.sort(function(a,b){ return ((b.createdAt&&b.createdAt.seconds)||0)-((a.createdAt&&a.createdAt.seconds)||0); });
+  } else if (sort === 'popular' || sort === 'liquid' || sort === 'trending') {
+    copy.sort(function(a,b){ return (b.totalVolume||0)-(a.totalVolume||0); });
+  } else if (sort === 'ending') {
+    copy.sort(function(a,b){
+      var at = (a.resolutionDate&&a.resolutionDate.seconds)||Infinity;
+      var bt = (b.resolutionDate&&b.resolutionDate.seconds)||Infinity;
+      return at-bt;
+    });
+  } else if (sort === 'competitive') {
+    copy.sort(function(a,b){
+      return Math.abs(50-(a.currentProbability||50)) - Math.abs(50-(b.currentProbability||50));
+    });
+  }
+  return copy;
+}
+
+function renderResults(list, label) {
+  var grid  = document.getElementById('searchResultsGrid');
+  var noRes = document.getElementById('searchNoResults');
+  var lbl   = document.getElementById('searchResultsLabel');
+  if (lbl) lbl.textContent = label || 'Results';
+  if (!list.length) { grid.innerHTML=''; noRes.style.display='block'; return; }
+  noRes.style.display = 'none';
+  grid.innerHTML = list.map(buildCard).join('');
+}
+
+function onSearchInput(val) {
+  var wrap   = document.getElementById('searchResultsWrap');
+  var browse = document.getElementById('browseWrap');
+  val = val.trim().toLowerCase();
+  if (!val) { wrap.style.display='none'; browse.style.display='block'; return; }
+  wrap.style.display   = 'block';
+  browse.style.display = 'none';
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(function() {
+    var matches = allMarkets.filter(function(m){
+      return (m.question||'').toLowerCase().indexOf(val)>=0 ||
+             (m.category||'').toLowerCase().indexOf(val)>=0 ||
+             (m.tags||[]).some(function(t){ return t.toLowerCase().indexOf(val)>=0; });
+    });
+    renderResults(sortMarkets(matches, currentSort), 'Results for "'+val.slice(0,30)+'"');
+  }, 280);
+}
+
+function setBrowse(e, btn) {
+  e.preventDefault();
+  currentSort = btn.dataset.sort || 'new';
+  document.querySelectorAll('.browse-chip').forEach(function(c){ c.classList.remove('is-active'); });
+  btn.classList.add('is-active');
+  var val = (document.getElementById('searchInput').value||'').trim().toLowerCase();
+  var list = val ? allMarkets.filter(function(m){
+    return (m.question||'').toLowerCase().indexOf(val)>=0 ||
+           (m.category||'').toLowerCase().indexOf(val)>=0;
+  }) : allMarkets;
+  document.getElementById('searchResultsWrap').style.display = 'block';
+  document.getElementById('browseWrap').style.display        = 'none';
+  renderResults(sortMarkets(list, currentSort), (btn.textContent||'').trim()+' Markets');
+}
+
+function goTopic(e, cat) {
+  e.preventDefault();
+  var matches = allMarkets.filter(function(m){ return m.category===cat; });
+  document.getElementById('searchResultsWrap').style.display = 'block';
+  document.getElementById('browseWrap').style.display        = 'none';
+  document.getElementById('searchInput').value = cat.charAt(0).toUpperCase()+cat.slice(1);
+  renderResults(sortMarkets(matches, currentSort), cat.charAt(0).toUpperCase()+cat.slice(1)+' Markets');
+}
+
+// Load markets once on page load
+db.collection('markets').where('status','==','active').get().then(function(snap){
+  allMarkets = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+}).catch(function(e){ console.warn('Search load error:',e); });
+</script>
+
+<!-- Smartsupp Live Chat -->
+<script type="text/javascript">
+var _smartsupp = _smartsupp || {};
+_smartsupp.key = 'e074775f8766e30f72a60b6941af184692c32fe1';
+window.smartsupp||(function(d) {
+  var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
+  s=d.getElementsByTagName('script')[0];
+  c=d.createElement('script');
+  c.type='text/javascript';c.charset='utf-8';c.async=true;
+  c.src='https://www.smartsuppchat.com/loader.js?';
+  s.parentNode.insertBefore(c,s);
+})(document);
+</script>
+
+
+<script>
+// Close profile panel when clicking outside
+document.addEventListener('click', function(e) {
+  document.querySelectorAll('.profile-menu').forEach(function(menu) {
+    if (!menu.contains(e.target)) menu.removeAttribute('open');
+  });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>PredictIQ — Admin</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .admin-wrap { max-width:var(--container,1180px); margin:0 auto; padding:0 16px; }
+    .admin-topbar {
+      background:var(--surface); border-bottom:1px solid var(--border);
+      position:sticky; top:0; z-index:40;
+    }
+    .admin-topbar-inner {
+      display:flex; align-items:center; justify-content:space-between;
+      height:58px; max-width:var(--container,1180px); margin:0 auto; padding:0 16px;
+    }
+    .admin-brand { display:flex; align-items:center; gap:9px; }
+    .admin-brand svg { width:26px; height:26px; color:var(--accent); }
+    .admin-badge {
+      padding:3px 10px; background:rgba(124,92,255,.15); color:var(--accent);
+      border-radius:99px; font-size:11px; font-weight:700;
+      border:1px solid rgba(124,92,255,.3);
+    }
+    .admin-user-info { font-size:13px; color:var(--text-dim); }
+    .admin-signout {
+      padding:6px 16px; border-radius:99px; border:1px solid var(--border);
+      background:none; color:var(--text-dim); font-size:13px; font-weight:600;
+      cursor:pointer; font-family:inherit; transition:border-color .15s, color .15s;
+    }
+    .admin-signout:hover { border-color:var(--accent); color:var(--accent); }
+    .admin-tabs {
+      display:flex; overflow-x:auto; scrollbar-width:none; border-bottom:1px solid var(--border);
+      background:var(--surface); gap:0; padding:0 16px;
+    }
+    .admin-tabs::-webkit-scrollbar { display:none; }
+    .admin-tab {
+      padding:14px 20px; font-size:14px; font-weight:600; color:var(--text-dim);
+      border-bottom:2px solid transparent; white-space:nowrap; cursor:pointer;
+      background:none; border-top:none; border-left:none; border-right:none;
+      font-family:inherit; transition:color .15s;
+    }
+    .admin-tab.active { color:var(--text); border-bottom-color:var(--accent); }
+    .admin-panel { display:none; padding:24px 0; }
+    .admin-panel.active { display:block; }
+    .stat-row {
+      display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:24px;
+    }
+    @media(min-width:640px){ .stat-row { grid-template-columns:repeat(4,1fr); } }
+    .stat-box {
+      background:var(--surface); border:1px solid var(--border); border-radius:16px;
+      padding:16px;
+    }
+    .stat-box .sv { font-family:var(--font-display,inherit); font-size:26px; font-weight:800; color:var(--text); }
+    .stat-box .sl { font-size:12px; color:var(--text-dim); margin-top:4px; }
+    .admin-table-wrap { overflow-x:auto; }
+    table.admin-tbl { width:100%; border-collapse:collapse; font-size:13.5px; }
+    table.admin-tbl th {
+      text-align:left; padding:10px 12px; font-size:12px; font-weight:700;
+      color:var(--text-dim); border-bottom:1px solid var(--border); white-space:nowrap;
+    }
+    table.admin-tbl td {
+      padding:11px 12px; border-bottom:1px solid var(--border); color:var(--text-dim);
+      vertical-align:middle;
+    }
+    table.admin-tbl tr:last-child td { border-bottom:none; }
+    table.admin-tbl td strong { color:var(--text); }
+    .s-badge {
+      display:inline-flex; padding:3px 9px; border-radius:99px;
+      font-size:11.5px; font-weight:700;
+    }
+    .s-badge.active   { background:rgba(31,209,124,.13); color:#1fd17c; }
+    .s-badge.pending  { background:rgba(242,179,65,.13);  color:#f2b341; }
+    .s-badge.approved { background:rgba(31,209,124,.13);  color:#1fd17c; }
+    .s-badge.rejected { background:rgba(242,73,107,.13);  color:#f2496b; }
+    .s-badge.resolved { background:rgba(124,92,255,.13);  color:var(--accent); }
+    .a-btn {
+      padding:5px 12px; border-radius:99px; font-size:12px; font-weight:700;
+      border:1px solid var(--border); background:none; color:var(--text-dim);
+      cursor:pointer; font-family:inherit; transition:all .15s;
+    }
+    .a-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .a-btn.danger:hover { border-color:#f2496b; color:#f2496b; }
+    .modal-back {
+      position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:200;
+      display:none; align-items:center; justify-content:center; padding:16px;
+    }
+    .modal-back.open { display:flex; }
+    .modal-box {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:20px; padding:28px 24px; width:100%; max-width:500px;
+      max-height:90vh; overflow-y:auto;
+    }
+    .modal-box h3 { font-family:var(--font-display,inherit); font-size:20px; font-weight:800; margin-bottom:18px; color:var(--text); }
+    .form-group { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+    .form-label { font-size:13px; font-weight:600; color:var(--text-dim); }
+    .form-input {
+      height:44px; padding:0 14px; border-radius:12px;
+      background:var(--bg); border:1.5px solid var(--border);
+      color:var(--text); font-size:15px; font-family:inherit; outline:none;
+      transition:border-color .15s;
+    }
+    .form-input:focus { border-color:var(--accent); }
+    select.form-input { cursor:pointer; }
+    .modal-foot { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+    .spinner-overlay {
+      position:fixed; inset:0; background:var(--bg); z-index:999;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .spinner {
+      width:34px; height:34px; border-radius:50%;
+      border:3px solid var(--border); border-top-color:var(--accent);
+      animation:spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .toast {
+      position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(16px);
+      background:var(--surface); border:1px solid var(--border); border-radius:99px;
+      padding:10px 20px; font-size:14px; font-weight:600; color:var(--text);
+      z-index:500; opacity:0; transition:opacity .25s, transform .25s; white-space:nowrap;
+    }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    .toast.ok  { border-color:#1fd17c; color:#1fd17c; }
+    .toast.err { border-color:#f2496b; color:#f2496b; }
+  </style>
+</head>
+<body>
+
+<div class="spinner-overlay" id="loader"><div class="spinner"></div></div>
+
+<div id="adminShell" style="display:none;">
+  <div class="admin-topbar">
+    <div class="admin-topbar-inner">
+      <div class="admin-brand">
+        <svg viewBox="0 0 32 32" fill="none" stroke="currentColor">
+          <path d="M16 2 28 9v14L16 30 4 23V9Z" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M9 18l4.5-6 4 4L23 10" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="23" cy="10" r="1.8" fill="currentColor" stroke="none"/>
+        </svg>
+        <span style="font-family:var(--font-display,inherit);font-weight:800;font-size:17px;color:var(--text);">Predict<span style="color:var(--accent);">IQ</span></span>
+        <span class="admin-badge">Admin</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="admin-user-info" id="adminEmailLabel"></span>
+        <button class="admin-signout" onclick="doSignOut()">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-tabs" id="adminTabs">
+    <button class="admin-tab active" data-tab="overview"    onclick="switchTab(this)">Overview</button>
+    <button class="admin-tab"        data-tab="markets"     onclick="switchTab(this)">Markets</button>
+    <button class="admin-tab"        data-tab="users"       onclick="switchTab(this)">Users</button>
+    <button class="admin-tab"        data-tab="deposits"    onclick="switchTab(this)">Deposits</button>
+    <button class="admin-tab"        data-tab="withdrawals" onclick="switchTab(this)">Withdrawals</button>
+    <button class="admin-tab"        data-tab="wallets"     onclick="switchTab(this)">Wallets</button>
+  </div>
+
+  <div class="admin-wrap">
+
+    <!-- OVERVIEW -->
+    <div class="admin-panel active" id="panel-overview">
+      <div class="stat-row">
+        <div class="stat-box"><div class="sv" id="ovUsers">—</div><div class="sl">Total Users</div></div>
+        <div class="stat-box"><div class="sv" id="ovMarkets">—</div><div class="sl">Active Markets</div></div>
+        <div class="stat-box"><div class="sv" id="ovDep">—</div><div class="sl">Pending Deposits</div></div>
+        <div class="stat-box"><div class="sv" id="ovWd">—</div><div class="sl">Pending Withdrawals</div></div>
+      </div>
+      <h3 style="font-size:14px;font-weight:700;color:var(--text-dim);margin-bottom:12px;">Recent Signups</h3>
+      <div class="admin-table-wrap">
+        <table class="admin-tbl"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Account ID</th><th>Balance</th><th>Joined</th></tr></thead>
+        <tbody id="ovUsersBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- MARKETS -->
+    <div class="admin-panel" id="panel-markets">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <p style="font-size:13px;color:var(--text-dim);margin:0;">Create and resolve prediction markets. Resolution bias is hidden from users.</p>
+        <button class="a-btn" style="background:var(--accent);color:#fff;border-color:var(--accent);" onclick="openCreateMarket()">+ Create Market</button>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-tbl">
+          <thead><tr><th>Question</th><th>Category</th><th>Prob.</th><th>Volume</th><th>Ends</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="marketsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="admin-panel" id="panel-users">
+      <div class="admin-table-wrap">
+        <table class="admin-tbl">
+          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Account ID</th><th>Balance</th><th>Joined</th><th>Action</th></tr></thead>
+          <tbody id="usersBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- DEPOSITS -->
+    <div class="admin-panel" id="panel-deposits">
+      <div class="admin-table-wrap">
+        <table class="admin-tbl">
+          <thead><tr><th>User</th><th>Amount</th><th>Coin</th><th>TXID</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+          <tbody id="depsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- WITHDRAWALS -->
+    <div class="admin-panel" id="panel-withdrawals">
+      <div class="admin-table-wrap">
+        <table class="admin-tbl">
+          <thead><tr><th>User</th><th>Amount</th><th>Coin</th><th>Address</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+          <tbody id="wdsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- WALLETS -->
+    <div class="admin-panel" id="panel-wallets">
+      <p style="font-size:13.5px;color:var(--text-dim);background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:20px;line-height:1.6;">
+        Set the wallet addresses for each cryptocurrency. These addresses will be shown to users on the deposit page.
+      </p>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;">
+        <h3 style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:18px;">Crypto Wallet Addresses</h3>
+        <div style="display:flex;flex-direction:column;gap:16px;" id="walletFields">
+          <!-- fields injected by JS -->
+        </div>
+        <div id="walletSaveMsg" style="display:none;font-size:13px;margin-top:12px;padding:10px 14px;border-radius:10px;"></div>
+        <button onclick="saveAllWallets()" style="margin-top:20px;width:100%;height:46px;border-radius:99px;background:var(--accent,#7c5cff);color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:inherit;">Save All Wallet Addresses</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Balance adjust modal -->
+<div class="modal-back" id="balModal">
+  <div class="modal-box">
+    <h3>Adjust Balance</h3>
+    <p style="font-size:13.5px;color:var(--text-dim);margin-bottom:16px;" id="balModalUser">—</p>
+    <div class="form-group">
+      <label class="form-label">Amount (positive to add, negative to subtract)</label>
+      <input class="form-input" id="balAmount" type="number" placeholder="e.g. 100 or -50"/>
+    </div>
+    <div class="modal-foot">
+      <button class="a-btn" onclick="closeBalModal()">Cancel</button>
+      <button class="a-btn" style="background:var(--accent);color:#fff;border-color:var(--accent);" onclick="submitBalAdj()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="prediction-engine.js"></script>
+<script>
+var adminUser = null, balTargetUid = null;
+
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + (type||'ok');
+  setTimeout(function(){ t.classList.add('show'); }, 10);
+  setTimeout(function(){ t.classList.remove('show'); }, 3200);
+}
+
+function fmtCurrency(n) {
+  return '$' + (parseFloat(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function fmtDate(ts) {
+  if (!ts) return '—';
+  var d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+
+function switchTab(btn) {
+  document.querySelectorAll('.admin-tab').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.admin-panel').forEach(function(p){ p.classList.remove('active'); });
+  btn.classList.add('active');
+  var tab = btn.dataset.tab;
+  document.getElementById('panel-'+tab).classList.add('active');
+  if (tab === 'overview')    loadOverview();
+  if (tab === 'markets')     loadMarkets();
+  if (tab === 'users')       loadUsers();
+  if (tab === 'deposits')    loadDeposits();
+  if (tab === 'withdrawals') loadWithdrawals();
+  if (tab === 'wallets')     loadWallets();
+}
+
+async function loadOverview() {
+  var [uSnap, mSnap, dSnap, wSnap] = await Promise.all([
+    db.collection('users').orderBy('createdAt','desc').get(),
+    db.collection('markets').where('status','==','active').get(),
+    db.collection('deposits').where('status','==','pending').get(),
+    db.collection('withdrawals').where('status','==','pending').get()
+  ]);
+  document.getElementById('ovUsers').textContent   = uSnap.size;
+  document.getElementById('ovMarkets').textContent = mSnap.size;
+  document.getElementById('ovDep').textContent     = dSnap.size;
+  document.getElementById('ovWd').textContent      = wSnap.size;
+  var recent = uSnap.docs.slice(0,8);
+  document.getElementById('ovUsersBody').innerHTML = recent.map(function(d){
+    var u = d.data();
+    return '<tr><td><strong>'+(u.fullName||'—')+'</strong></td><td>'+(u.email||'—')+'</td><td>'+(u.phone||'—')+'</td><td style="font-family:monospace;font-size:12px;">'+(u.accountId||'—')+'</td><td>'+fmtCurrency(u.balance)+'</td><td>'+fmtDate(u.createdAt)+'</td></tr>';
+  }).join('') || '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-dim);">No users yet.</td></tr>';
+}
+
+async function loadUsers() {
+  var snap = await db.collection('users').orderBy('createdAt','desc').get();
+  document.getElementById('usersBody').innerHTML = snap.docs.map(function(d){
+    var u = d.data();
+    return '<tr><td><strong>'+(u.fullName||'—')+'</strong></td><td>'+(u.email||'—')+'</td><td>'+(u.phone||'—')+'</td><td style="font-family:monospace;font-size:12px;">'+(u.accountId||'—')+'</td><td>'+fmtCurrency(u.balance)+'</td><td>'+fmtDate(u.createdAt)+'</td>'+
+      '<td><button class="a-btn" data-uid="'+d.id+'" data-name="'+(u.fullName||'User')+'" onclick="openBalModal(this.dataset.uid,this.dataset.name)">Adjust Balance</button></td></tr>';
+  }).join('') || '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-dim);">No users.</td></tr>';
+}
+
+function openBalModal(uid, name) {
+  balTargetUid = uid;
+  document.getElementById('balModalUser').textContent = name;
+  document.getElementById('balAmount').value = '';
+  document.getElementById('balModal').classList.add('open');
+}
+function closeBalModal() { document.getElementById('balModal').classList.remove('open'); balTargetUid = null; }
+
+async function submitBalAdj() {
+  var amt = parseFloat(document.getElementById('balAmount').value);
+  if (isNaN(amt)) { showToast('Enter a valid amount.', 'err'); return; }
+  await db.collection('users').doc(balTargetUid).update({ balance: firebase.firestore.FieldValue.increment(amt) });
+  showToast('Balance updated.');
+  closeBalModal();
+  loadUsers();
+}
+
+async function loadDeposits() {
+  var [dSnap, uSnap] = await Promise.all([
+    db.collection('deposits').orderBy('createdAt','desc').get(),
+    db.collection('users').get()
+  ]);
+  var umap = {}; uSnap.forEach(function(d){ umap[d.id] = d.data(); });
+  document.getElementById('depsBody').innerHTML = dSnap.docs.map(function(d){
+    var dep = d.data(), u = umap[dep.userId]||{};
+    var txShort = (dep.txid||'').slice(0,14)+'…';
+    var actions = dep.status === 'pending'
+      ? '<button class="a-btn" data-id="'+d.id+'" data-uid="'+dep.userId+'" data-amt="'+(dep.amount||0)+'" onclick="approveDeposit(this.dataset.id,this.dataset.uid,parseFloat(this.dataset.amt))">Approve</button> '+
+        '<button class="a-btn danger" data-id="'+d.id+'" onclick="rejectDeposit(this.dataset.id)">Reject</button>'
+      : '<span style="font-size:12px;color:var(--text-dim);">'+dep.status+'</span>';
+    return '<tr><td><strong>'+(u.fullName||'—')+'</strong></td><td>'+fmtCurrency(dep.amount)+'</td><td>'+(dep.coin||'—')+'</td>'+
+      '<td style="font-family:monospace;font-size:12px;" title="'+(dep.txid||'')+'">'+txShort+'</td>'+
+      '<td><span class="s-badge '+(dep.status||'pending')+'">'+(dep.status||'pending')+'</span></td>'+
+      '<td>'+fmtDate(dep.createdAt)+'</td><td>'+actions+'</td></tr>';
+  }).join('') || '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-dim);">No deposits.</td></tr>';
+}
+
+async function approveDeposit(id, uid, amount) {
+  var batch = db.batch();
+  batch.update(db.collection('deposits').doc(id), { status:'approved', reviewedAt: firebase.firestore.FieldValue.serverTimestamp() });
+  batch.update(db.collection('users').doc(uid), { balance: firebase.firestore.FieldValue.increment(amount) });
+  batch.set(db.collection('transactions').doc(), { userId:uid, type:'deposit', amount:amount, status:'approved', relatedId:id, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+  await batch.commit();
+  showToast('Deposit approved.'); loadDeposits();
+}
+async function rejectDeposit(id) {
+  await db.collection('deposits').doc(id).update({ status:'rejected', reviewedAt: firebase.firestore.FieldValue.serverTimestamp() });
+  showToast('Deposit rejected.'); loadDeposits();
+}
+
+async function loadWithdrawals() {
+  var [wSnap, uSnap] = await Promise.all([
+    db.collection('withdrawals').orderBy('createdAt','desc').get(),
+    db.collection('users').get()
+  ]);
+  var umap = {}; uSnap.forEach(function(d){ umap[d.id] = d.data(); });
+  document.getElementById('wdsBody').innerHTML = wSnap.docs.map(function(d){
+    var wd = d.data(), u = umap[wd.userId]||{};
+    var addrShort = (wd.address||'').slice(0,14)+'…';
+    var actions = wd.status === 'pending'
+      ? '<button class="a-btn" data-id="'+d.id+'" onclick="approveWd(this.dataset.id)">Approve</button> '+
+        '<button class="a-btn danger" data-id="'+d.id+'" onclick="rejectWd(this.dataset.id)">Reject</button>'
+      : '<span style="font-size:12px;color:var(--text-dim);">'+wd.status+'</span>';
+    return '<tr><td><strong>'+(u.fullName||'—')+'</strong></td><td>'+fmtCurrency(wd.amount)+'</td><td>'+(wd.coin||'—')+'</td>'+
+      '<td style="font-family:monospace;font-size:12px;" title="'+(wd.address||'')+'">'+addrShort+'</td>'+
+      '<td><span class="s-badge '+(wd.status||'pending')+'">'+(wd.status||'pending')+'</span></td>'+
+      '<td>'+fmtDate(wd.createdAt)+'</td><td>'+actions+'</td></tr>';
+  }).join('') || '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-dim);">No withdrawals.</td></tr>';
+}
+
+async function approveWd(id) {
+  await db.collection('withdrawals').doc(id).update({ status:'approved', reviewedAt: firebase.firestore.FieldValue.serverTimestamp() });
+  showToast('Withdrawal approved.'); loadWithdrawals();
+}
+async function rejectWd(id) {
+  await db.collection('withdrawals').doc(id).update({ status:'rejected', reviewedAt: firebase.firestore.FieldValue.serverTimestamp() });
+  showToast('Withdrawal rejected.'); loadWithdrawals();
+}
+
+function doSignOut() { auth.signOut().then(function(){ location.href = 'login.html'; }); }
+
+// ── WALLETS ────────────────────────────────────────────────────────────────
+var WALLET_COINS = [
+  { id:'BTC',  label:'Bitcoin (BTC)' },
+  { id:'ETH',  label:'Ethereum (ETH)' },
+  { id:'LTC',  label:'Litecoin (LTC)' },
+  { id:'BNB',  label:'BNB (BNB)' },
+  { id:'USDT', label:'Tether USDT' },
+  { id:'USDC', label:'USD Coin (USDC)' },
+  { id:'XRP',  label:'XRP (XRP)' }
+];
+
+async function loadWallets() {
+  var snap = await db.collection('wallets').get();
+  var existing = {};
+  snap.forEach(function(d){ existing[d.id] = d.data().address || ''; });
+
+  var container = document.getElementById('walletFields');
+  container.innerHTML = WALLET_COINS.map(function(c) {
+    return '<div>'+
+      '<label style="font-size:13px;font-weight:700;color:var(--text);display:block;margin-bottom:8px;">'+c.label+'</label>'+
+      '<input id="wallet_'+c.id+'" type="text" value="'+(existing[c.id]||'')+'" placeholder="Enter '+c.id+' wallet address" '+
+        'style="width:100%;height:44px;padding:0 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:13.5px;font-family:monospace;outline:none;box-sizing:border-box;" '+
+        'onfocus="this.style.borderColor=\'var(--accent)\'" onblur="this.style.borderColor=\'var(--border)\'"/>'+
+    '</div>';
+  }).join('');
+}
+
+async function saveAllWallets() {
+  var msg = document.getElementById('walletSaveMsg');
+  msg.style.display = 'none';
+  try {
+    var batch = db.batch();
+    WALLET_COINS.forEach(function(c) {
+      var input = document.getElementById('wallet_'+c.id);
+      var addr  = input ? input.value.trim() : '';
+      batch.set(db.collection('wallets').doc(c.id), {
+        coin:    c.id,
+        label:   c.label,
+        address: addr,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    });
+    await batch.commit();
+    msg.textContent       = 'All wallet addresses saved successfully.';
+    msg.style.background  = 'var(--yes-bg,rgba(31,209,124,.13))';
+    msg.style.color       = 'var(--yes,#1fd17c)';
+    msg.style.display     = 'block';
+    showToast('Wallet addresses saved.');
+  } catch(e) {
+    msg.textContent       = 'Failed to save: '+e.message;
+    msg.style.background  = 'rgba(242,73,107,.1)';
+    msg.style.color       = '#f2496b';
+    msg.style.display     = 'block';
+  }
+}
+var _resolveTargetId = null;
+var PLATFORM_FEE = 0.02;
+
+async function loadMarkets() {
+  var tbody = document.getElementById('marketsBody');
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-dim);">Loading…</td></tr>';
+  try {
+    var [mSnap, lSnap] = await Promise.all([
+      db.collection('markets').orderBy('createdAt','desc').get(),
+      db.collection('marketLive').get()
+    ]);
+    var lmap = {};
+    lSnap.forEach(function(d){ lmap[d.id] = d.data(); });
+    if (mSnap.empty) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-dim);">No markets yet. Create one above.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = mSnap.docs.map(function(d) {
+      var m    = d.data();
+      var live = lmap[d.id] || {};
+      var prob = typeof live.currentProbability === 'number' ? Math.round(live.currentProbability) : Math.round(m.startingProbability||50);
+      var vol  = live.totalVolume >= 1000 ? '$'+((live.totalVolume/1000).toFixed(1))+'K' : '$'+Math.round(live.totalVolume||0);
+      var ends = m.resolutionDate ? (m.resolutionDate.toDate ? m.resolutionDate.toDate() : new Date(m.resolutionDate)).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
+      var stCls = m.status==='active' ? 'active' : 'resolved';
+      var action = m.status==='active'
+        ? '<button class="a-btn" data-id="'+d.id+'" data-q="'+encodeURIComponent(m.question||'')+'" onclick="openResolveModal(this.dataset.id,decodeURIComponent(this.dataset.q))">Resolve</button>'
+        : '<span style="font-size:12px;color:var(--text-dim);">'+(m.resolvedOutcome||'Resolved')+'</span>';
+      var qShort = (m.question||'').length > 55 ? (m.question||'').slice(0,52)+'…' : (m.question||'—');
+      return '<tr>'+
+        '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+(m.question||'')+'"><strong>'+qShort+'</strong></td>'+
+        '<td>'+(m.category||'—')+'</td>'+
+        '<td style="font-family:monospace;color:var(--yes);">'+prob+'%</td>'+
+        '<td style="font-family:monospace;">'+vol+'</td>'+
+        '<td style="font-size:12px;color:var(--text-dim);">'+ends+'</td>'+
+        '<td><span class="s-badge '+stCls+'">'+m.status+'</span></td>'+
+        '<td>'+action+'</td>'+
+      '</tr>';
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--no);">Error loading markets.</td></tr>';
+    console.error('loadMarkets error:', e);
+  }
+}
+
+// ── Create Market ──────────────────────────────────────────────────────────
+function openCreateMarket() {
+  document.getElementById('cmQuestion').value      = '';
+  document.getElementById('cmCategory').value      = 'politics';
+  document.getElementById('cmDate').value          = '';
+  document.getElementById('cmProb').value          = '50';
+  document.getElementById('cmBias').value          = 'YES';
+  document.getElementById('cmMarketType').value    = 'binary';
+  document.getElementById('cmOutcomes').value      = '';
+  document.getElementById('cmOutcomesWrap').style.display = 'none';
+  document.getElementById('cmErr').style.display   = 'none';
+  document.getElementById('cmModal').style.display = 'flex';
+}
+function closeCreateMarket() { document.getElementById('cmModal').style.display = 'none'; }
+
+document.addEventListener('DOMContentLoaded', function() {
+  var mtSel = document.getElementById('cmMarketType');
+  if (mtSel) mtSel.addEventListener('change', function() {
+    document.getElementById('cmOutcomesWrap').style.display = this.value === 'multi' ? 'block' : 'none';
+  });
+});
+
+async function submitCreateMarket() {
+  var question = document.getElementById('cmQuestion').value.trim();
+  var category = document.getElementById('cmCategory').value;
+  var dateVal  = document.getElementById('cmDate').value;
+  var prob     = parseFloat(document.getElementById('cmProb').value);
+  var bias     = document.getElementById('cmBias').value;
+  var mType    = document.getElementById('cmMarketType').value;
+  var outcomes = document.getElementById('cmOutcomes').value.trim();
+  var errEl    = document.getElementById('cmErr');
+  errEl.style.display = 'none';
+
+  var errs = [];
+  if (!question)                        errs.push('Question is required.');
+  if (!dateVal)                         errs.push('Resolution date is required.');
+  if (isNaN(prob)||prob<2||prob>98)     errs.push('Starting probability must be 2–98.');
+  if (!bias)                            errs.push('Resolution bias is required.');
+  if (dateVal && new Date(dateVal) <= new Date()) errs.push('Resolution date must be in the future.');
+  if (mType === 'multi' && !outcomes)   errs.push('Outcomes are required for multi-outcome markets.');
+
+  if (errs.length) { errEl.textContent = errs.join(' '); errEl.style.display = 'block'; return; }
+
+  var btn = document.getElementById('cmBtn');
+  btn.disabled = true; btn.textContent = 'Creating…';
+
+  try {
+    var resDate = firebase.firestore.Timestamp.fromDate(new Date(dateVal));
+    var seedVol = Math.floor(Math.random() * 7200 + 800);
+    var parsedOutcomes = [];
+
+    if (mType === 'multi') {
+      parsedOutcomes = outcomes.split('\n').map(function(line, i, arr) {
+        var name = line.trim();
+        return { name: name, probability: Math.round(100 / arr.length) };
+      }).filter(function(o){ return o.name; });
+    }
+
+    var batch   = db.batch();
+    var mktRef  = db.collection('markets').doc();
+    var liveRef = db.collection('marketLive').doc(mktRef.id);
+    var secRef  = db.collection('marketSecrets').doc(mktRef.id);
+
+    batch.set(mktRef, {
+      question:            question,
+      category:            category,
+      marketType:          mType,
+      outcomes:            parsedOutcomes,
+      resolutionDate:      resDate,
+      startingProbability: prob,
+      status:              'active',
+      resolvedOutcome:     null,
+      resolvedAt:          null,
+      totalVolume:         seedVol,
+      createdBy:           adminUser.uid,
+      createdAt:           firebase.firestore.FieldValue.serverTimestamp()
+    });
+    batch.set(liveRef, {
+      currentProbability: prob,
+      totalVolume:        seedVol,
+      lastUpdated:        firebase.firestore.FieldValue.serverTimestamp()
+    });
+    batch.set(secRef, {
+      resolutionBias:    bias,
+      targetProbability: bias === 'YES' ? Math.max(prob, 72) : Math.min(prob, 28)
+    });
+
+    await batch.commit();
+
+    // First probability history snapshot
+    await db.collection('markets').doc(mktRef.id)
+      .collection('probabilityHistory').add({
+        probability: prob,
+        timestamp:   firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+    // Tell engine to pick up the new market
+    if (window.predictionEngine) predictionEngine.refresh();
+
+    closeCreateMarket();
+    showToast('Market created successfully.');
+    loadMarkets();
+  } catch(e) {
+    errEl.textContent = 'Failed to create market: ' + e.message;
+    errEl.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Create Market';
+}
+
+// ── Resolve Market ─────────────────────────────────────────────────────────
+function openResolveModal(id, question) {
+  _resolveTargetId = id;
+  document.getElementById('rmQuestion').textContent = question;
+  document.getElementById('rmOutcome').value        = '';
+  document.getElementById('rmErr').style.display    = 'none';
+  document.getElementById('rmModal').style.display  = 'flex';
+}
+function closeResolveModal() {
+  document.getElementById('rmModal').style.display = 'none';
+  _resolveTargetId = null;
+}
+
+async function submitResolveMarket() {
+  var outcome = document.getElementById('rmOutcome').value;
+  var errEl   = document.getElementById('rmErr');
+  errEl.style.display = 'none';
+  if (!outcome)         { errEl.textContent = 'Select an outcome.'; errEl.style.display='block'; return; }
+  if (!_resolveTargetId){ return; }
+
+  var btn = document.getElementById('rmBtn');
+  btn.disabled = true; btn.textContent = 'Resolving…';
+
+  try {
+    var marketId = _resolveTargetId;
+
+    // Fetch all open positions for this market
+    var [manSnap, cpSnap] = await Promise.all([
+      db.collection('positions').where('marketId','==',marketId).where('status','==','open').get(),
+      db.collection('copyPositions').where('marketId','==',marketId).where('status','==','open').get()
+    ]);
+
+    var all = [
+      ...manSnap.docs.map(function(d){ return {id:d.id,col:'positions',    data:d.data()}; }),
+      ...cpSnap.docs.map(function(d) { return {id:d.id,col:'copyPositions',data:d.data()}; })
+    ];
+
+    var deltas  = {};
+    var txRows  = [];
+    var posOps  = all.map(function(p) {
+      var d = p.data, win = d.side === outcome;
+      if (win) {
+        var gross = d.stake / ((d.entryProbability||50) / 100);
+        var fee   = Math.round(gross * PLATFORM_FEE * 100) / 100;
+        var net   = Math.round((gross - fee) * 100) / 100;
+        deltas[d.userId] = (deltas[d.userId]||0) + net;
+        txRows.push({uid:d.userId, type:'payout', amount:net,  ref:p.id});
+        txRows.push({uid:d.userId, type:'fee',    amount:-fee, ref:p.id});
+        return {ref:db.collection(p.col).doc(p.id), data:{status:'won', payoutAmount:net, feeAmount:fee, settledAt:firebase.firestore.FieldValue.serverTimestamp()}};
+      }
+      return {ref:db.collection(p.col).doc(p.id), data:{status:'lost', payoutAmount:0, feeAmount:0, settledAt:firebase.firestore.FieldValue.serverTimestamp()}};
+    });
+
+    // Fetch winner balances
+    var uids   = Object.keys(deltas);
+    var uSnaps = uids.length ? await Promise.all(uids.map(function(uid){ return db.collection('users').doc(uid).get(); })) : [];
+    var umap   = {};
+    uSnaps.forEach(function(s){ if(s.exists) umap[s.id]=s.data(); });
+
+    // Build ops array
+    var ops = [];
+    posOps.forEach(function(p){ ops.push({ref:p.ref, type:'update', data:p.data}); });
+    uids.forEach(function(uid) {
+      ops.push({ref:db.collection('users').doc(uid), type:'update', data:{balance:firebase.firestore.FieldValue.increment(deltas[uid])}});
+      txRows.filter(function(r){return r.uid===uid;}).forEach(function(r){
+        ops.push({ref:db.collection('transactions').doc(), type:'set', data:{
+          userId:uid, type:r.type, amount:r.amount, relatedId:r.ref,
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        }});
+      });
+    });
+    ops.push({ref:db.collection('markets').doc(marketId), type:'update', data:{
+      status:'resolved', resolvedOutcome:outcome, resolvedAt:firebase.firestore.FieldValue.serverTimestamp()
+    }});
+
+    // Flush in batches of 400
+    for (var i=0; i<ops.length; i+=400) {
+      var batch = db.batch();
+      ops.slice(i,i+400).forEach(function(op){
+        op.type==='set' ? batch.set(op.ref,op.data) : batch.update(op.ref,op.data);
+      });
+      await batch.commit();
+    }
+
+    var winners = all.filter(function(p){return p.data.side===outcome;}).length;
+    closeResolveModal();
+    showToast('Resolved as '+outcome+'. '+winners+' winner(s) paid out.');
+    loadMarkets();
+  } catch(e) {
+    errEl.textContent = 'Failed: '+e.message;
+    errEl.style.display = 'block';
+    console.error('resolveMarket error:', e);
+  }
+  btn.disabled = false; btn.textContent = 'Resolve Market';
+}
+
+// Guard — must be admin
+auth.onAuthStateChanged(async function(user) {
+  if (!user) { location.href = 'login.html'; return; }
+  try {
+    var snap = await db.collection('admins').doc(user.uid).get();
+    if (!snap.exists) { location.href = 'index.html'; return; }
+    adminUser = user;
+    predictionEngine.start();
+    document.getElementById('adminEmailLabel').textContent = user.email || '';
+    if (typeof smartsupp === 'function') { smartsupp('name', 'Admin'); smartsupp('email', user.email||''); }
+    document.getElementById('loader').style.display = 'none';
+    document.getElementById('adminShell').style.display = 'block';
+    loadOverview();
+  } catch(e) {
+    console.error('Admin auth failed:', e);
+    location.href = 'login.html';
+  }
+});
+</script>
+<!-- Create Market Modal -->
+<div id="cmModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.65);align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)closeCreateMarket()">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px 24px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3 style="font-size:18px;font-weight:800;color:var(--text);margin:0;">Create Market</h3>
+      <button onclick="closeCreateMarket()" style="background:none;border:none;cursor:pointer;color:var(--text-dim);padding:4px;"><svg style="width:20px;height:20px;" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div><label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Question *</label>
+        <input id="cmQuestion" type="text" placeholder="e.g. Will X happen before Y date?" maxlength="240" style="width:100%;height:44px;padding:0 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div><label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Category *</label>
+          <select id="cmCategory" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;">
+            <option value="politics">Politics</option><option value="sports">Sports</option>
+            <option value="crypto">Crypto</option><option value="finance">Finance</option>
+            <option value="tech">Tech</option><option value="culture">Culture</option>
+            <option value="geopolitics">Geopolitics</option><option value="economy">Economy</option>
+          </select></div>
+        <div><label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Market Type *</label>
+          <select id="cmMarketType" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;">
+            <option value="binary">Binary (Yes/No)</option>
+            <option value="multi">Multi-outcome</option>
+          </select></div>
+        <div><label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Resolution Date *</label>
+          <input id="cmDate" type="datetime-local" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;"></div>
+        <div><label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Starting Probability (YES %)</label>
+          <input id="cmProb" type="number" min="2" max="98" value="50" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;"></div>
+      </div>
+      <div><label style="font-size:13px;font-weight:600;color:var(--warn,#f2b341);display:block;margin-bottom:6px;">Resolution Bias (Hidden from users) *</label>
+        <select id="cmBias" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;">
+          <option value="YES">YES — this market will resolve YES</option>
+          <option value="NO">NO — this market will resolve NO</option>
+        </select></div>
+      <div id="cmOutcomesWrap" style="display:none;">
+        <label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Outcomes (one per line) *</label>
+        <textarea id="cmOutcomes" rows="4" placeholder="Team A&#10;Team B&#10;Draw" style="width:100%;padding:10px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;resize:vertical;box-sizing:border-box;"></textarea>
+      </div>
+      <div id="cmErr" style="font-size:13px;color:var(--no);display:none;padding:8px 12px;background:rgba(242,73,107,.08);border-radius:8px;"></div>
+      <button id="cmBtn" onclick="submitCreateMarket()" style="height:46px;border-radius:99px;background:var(--accent);color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:inherit;">Create Market</button>
+    </div>
+  </div>
+</div>
+
+<!-- Resolve Market Modal -->
+<div id="rmModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.65);align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)closeResolveModal()">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px 24px;width:100%;max-width:420px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="font-size:18px;font-weight:800;color:var(--text);margin:0;">Resolve Market</h3>
+      <button onclick="closeResolveModal()" style="background:none;border:none;cursor:pointer;color:var(--text-dim);padding:4px;"><svg style="width:20px;height:20px;" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    </div>
+    <p id="rmQuestion" style="font-size:14px;color:var(--text-dim);margin-bottom:16px;line-height:1.5;"></p>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Correct Outcome *</label>
+      <select id="rmOutcome" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:15px;font-family:inherit;outline:none;">
+        <option value="">Select outcome</option>
+        <option value="YES">YES</option>
+        <option value="NO">NO</option>
+      </select>
+    </div>
+    <div style="background:rgba(242,179,65,.08);border:1px solid rgba(242,179,65,.2);border-radius:10px;padding:10px 14px;font-size:12.5px;color:var(--warn,#f2b341);margin-bottom:14px;">
+      This is permanent. Winning positions will be paid out immediately at 98% of their calculated return (2% platform fee).
+    </div>
+    <div id="rmErr" style="font-size:13px;color:var(--no);display:none;margin-bottom:10px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeResolveModal()" style="flex:1;height:44px;border-radius:99px;background:none;border:1px solid var(--border);color:var(--text-dim);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Cancel</button>
+      <button id="rmBtn" onclick="submitResolveMarket()" style="flex:1;height:44px;border-radius:99px;background:var(--no,#f2496b);color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:inherit;">Resolve Market</button>
+    </div>
+  </div>
+</div>
+
+<!-- Smartsupp Live Chat -->
+<script type="text/javascript">
+var _smartsupp = _smartsupp || {};
+_smartsupp.key = 'e074775f8766e30f72a60b6941af184692c32fe1';
+window.smartsupp||(function(d) {
+  var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
+  s=d.getElementsByTagName('script')[0];
+  c=d.createElement('script');
+  c.type='text/javascript';c.charset='utf-8';c.async=true;
+  c.src='https://www.smartsuppchat.com/loader.js?';
+  s.parentNode.insertBefore(c,s);
+})(document);
+</script>
+
+</body>
+</html>

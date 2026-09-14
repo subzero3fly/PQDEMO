@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>PredictIQ — Sign Up</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--bg); padding:20px; }
+    .auth-card { width:100%; max-width:420px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:32px 28px; }
+    .auth-brand { display:flex; align-items:center; gap:9px; margin-bottom:28px; }
+    .auth-brand svg { width:28px; height:28px; color:var(--accent); }
+    .auth-title { font-family:var(--font-display); font-size:22px; font-weight:800; margin-bottom:6px; color:var(--text); }
+    .auth-sub   { font-size:13.5px; color:var(--text-dim); margin-bottom:24px; }
+    .form-group { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+    .form-label { font-size:13px; font-weight:600; color:var(--text-dim); }
+    .form-input { height:44px; padding:0 14px; border-radius:var(--radius-sm); background:var(--bg); border:1.5px solid var(--border); color:var(--text); font-size:15px; font-family:inherit; transition:border-color .15s; outline:none; }
+    .form-input:focus { border-color:var(--accent); }
+    .form-input::placeholder { color:var(--text-dim); opacity:.5; }
+    .phone-row { display:flex; gap:8px; }
+    .phone-prefix { height:44px; padding:0 12px; border-radius:var(--radius-sm); background:var(--bg); border:1.5px solid var(--border); color:var(--text); font-size:15px; font-family:inherit; outline:none; cursor:pointer; min-width:80px; transition:border-color .15s; }
+    .phone-prefix:focus { border-color:var(--accent); }
+    .form-error { font-size:12.5px; color:#f2496b; margin-top:2px; display:none; }
+    .form-error.show { display:block; }
+    .btn-submit { width:100%; height:46px; border-radius:var(--radius-pill); background:var(--accent); color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer; margin-top:8px; font-family:inherit; transition:opacity .15s; }
+    .btn-submit:hover { opacity:.88; }
+    .btn-submit:disabled { opacity:.5; cursor:not-allowed; }
+    .auth-footer { text-align:center; font-size:13.5px; color:var(--text-dim); margin-top:20px; }
+    .auth-footer a { color:var(--accent); font-weight:600; text-decoration:none; }
+    .terms-note { font-size:12px; color:var(--text-dim); text-align:center; margin-top:12px; line-height:1.5; }
+  </style>
+</head>
+<body>
+<div class="auth-card">
+  <div class="auth-brand">
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor">
+      <path d="M16 2 28 9v14L16 30 4 23V9Z" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M9 18l4.5-6 4 4L23 10" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="23" cy="10" r="1.8" fill="currentColor" stroke="none"/>
+    </svg>
+    <span style="font-family:var(--font-display);font-weight:800;font-size:18px;color:var(--text);">Predict<span style="color:var(--accent);">IQ</span></span>
+  </div>
+
+  <div class="auth-title">Create your account</div>
+  <div class="auth-sub">Join PredictIQ and start forecasting real-world events.</div>
+
+  <div id="globalErr" class="form-error"></div>
+
+  <div class="form-group">
+    <label class="form-label" for="signupName">Full Name</label>
+    <input class="form-input" id="signupName" type="text" placeholder="Your full name" autocomplete="name"/>
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="signupEmail">Email address</label>
+    <input class="form-input" id="signupEmail" type="email" placeholder="you@example.com" autocomplete="email"/>
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="signupPhone">Phone Number</label>
+    <div class="phone-row">
+      <select class="phone-prefix" id="signupPrefix" aria-label="Country code">
+        <option value="+1">+1</option><option value="+7">+7</option><option value="+20">+20</option>
+        <option value="+27">+27</option><option value="+30">+30</option><option value="+31">+31</option>
+        <option value="+33">+33</option><option value="+34">+34</option><option value="+39">+39</option>
+        <option value="+40">+40</option><option value="+44">+44</option><option value="+49">+49</option>
+        <option value="+52">+52</option><option value="+55">+55</option><option value="+61">+61</option>
+        <option value="+62">+62</option><option value="+63">+63</option><option value="+64">+64</option>
+        <option value="+65">+65</option><option value="+66">+66</option><option value="+81">+81</option>
+        <option value="+82">+82</option><option value="+86">+86</option><option value="+90">+90</option>
+        <option value="+91">+91</option><option value="+92">+92</option><option value="+98">+98</option>
+        <option value="+212">+212</option><option value="+213">+213</option><option value="+216">+216</option>
+        <option value="+218">+218</option><option value="+220">+220</option><option value="+221">+221</option>
+        <option value="+223">+223</option><option value="+224">+224</option><option value="+225">+225</option>
+        <option value="+226">+226</option><option value="+227">+227</option><option value="+228">+228</option>
+        <option value="+229">+229</option><option value="+230">+230</option><option value="+231">+231</option>
+        <option value="+232">+232</option><option value="+233">+233</option>
+        <option value="+234" selected>+234</option>
+        <option value="+235">+235</option><option value="+236">+236</option><option value="+237">+237</option>
+        <option value="+238">+238</option><option value="+240">+240</option><option value="+241">+241</option>
+        <option value="+242">+242</option><option value="+243">+243</option><option value="+244">+244</option>
+        <option value="+245">+245</option><option value="+249">+249</option><option value="+250">+250</option>
+        <option value="+251">+251</option><option value="+254">+254</option><option value="+255">+255</option>
+        <option value="+256">+256</option><option value="+260">+260</option><option value="+263">+263</option>
+        <option value="+966">+966</option><option value="+971">+971</option><option value="+972">+972</option>
+      </select>
+      <input class="form-input" id="signupPhone" type="tel" placeholder="0801 234 5678" autocomplete="tel" style="flex:1;"/>
+    </div>
+    <span id="phoneErr" class="form-error"></span>
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="signupPassword">Password</label>
+    <input class="form-input" id="signupPassword" type="password" placeholder="At least 6 characters" autocomplete="new-password"/>
+    <span id="passErr" class="form-error"></span>
+  </div>
+
+  <button class="btn-submit" id="signupBtn" onclick="doSignup()">Create Account</button>
+  <p class="terms-note">By creating an account you agree to our Terms of Use and Privacy Policy.</p>
+  <div class="auth-footer">Already have an account? <a href="login.html">Sign in</a></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+// ── Flag to suppress onAuthStateChanged redirect during signup ──────────────
+var _signingUp = false;
+
+// ── If already fully signed up, redirect ────────────────────────────────────
+auth.onAuthStateChanged(async function(user) {
+  if (!user || _signingUp) return;
+  try {
+    var adminSnap = await db.collection('admins').doc(user.uid).get();
+    if (adminSnap.exists) { location.href = 'admin.html'; return; }
+    var userSnap = await db.collection('users').doc(user.uid).get();
+    if (userSnap.exists) { location.href = 'index.html'; }
+    // If no user doc: signup was interrupted — stay on page so they can try again
+  } catch(e) {}
+});
+
+// ── Generate account ID locally — no Firestore query needed ─────────────────
+// 8-char alphanumeric = 32^8 ≈ 1 trillion combinations — collision risk negligible
+function generateAccountId() {
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var rand  = '';
+  for (var i = 0; i < 8; i++) rand += chars[Math.floor(Math.random() * chars.length)];
+  return 'PIQ-' + rand;
+}
+
+// ── Main signup flow ────────────────────────────────────────────────────────
+async function doSignup() {
+  var name   = document.getElementById('signupName').value.trim();
+  var email  = document.getElementById('signupEmail').value.trim();
+  var prefix = document.getElementById('signupPrefix').value;
+  var phone  = document.getElementById('signupPhone').value.trim();
+  var pass   = document.getElementById('signupPassword').value;
+  var errEl  = document.getElementById('globalErr');
+  var btn    = document.getElementById('signupBtn');
+
+  // Reset all errors
+  errEl.className = 'form-error';
+  document.getElementById('phoneErr').className = 'form-error';
+  document.getElementById('passErr').className  = 'form-error';
+
+  // Validate
+  if (!name)  { errEl.textContent = 'Full name is required.'; errEl.className = 'form-error show'; return; }
+  if (!email) { errEl.textContent = 'Email address is required.'; errEl.className = 'form-error show'; return; }
+  if (!phone) { document.getElementById('phoneErr').textContent = 'Phone number is required.'; document.getElementById('phoneErr').className = 'form-error show'; return; }
+  if (!pass || pass.length < 6) { document.getElementById('passErr').textContent = 'Password must be at least 6 characters.'; document.getElementById('passErr').className = 'form-error show'; return; }
+
+  btn.disabled    = true;
+  btn.textContent = 'Creating account…';
+  _signingUp      = true;
+
+  try {
+    // STEP 1 — Create Firebase Auth user
+    var cred = await auth.createUserWithEmailAndPassword(email, pass);
+    var uid  = cred.user.uid;
+
+    // STEP 2 — Write Firestore doc (no query — just a direct set)
+    //          This is what was failing before: generateAccountId() did a
+    //          cross-collection query which the rules block for unauthenticated users.
+    //          Now we generate the ID locally and do a single direct write.
+    var accountId = generateAccountId();
+    await db.collection('users').doc(uid).set({
+      fullName:  name,
+      email:     email,
+      phone:     prefix + phone,
+      accountId: accountId,
+      balance:   0,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // STEP 3 — Safe to redirect now that the doc exists
+    _signingUp = false;
+    location.href = 'index.html';
+
+  } catch(e) {
+    _signingUp      = false;
+    btn.disabled    = false;
+    btn.textContent = 'Create Account';
+
+    var msg = e.message || 'Something went wrong. Please try again.';
+
+    if (e.code === 'auth/email-already-in-use') {
+      // Auth account exists but Firestore doc may be missing (previous failed signup)
+      // Try to recover by writing the missing doc, then redirect to login
+      msg = 'An account with this email already exists. Please sign in instead.';
+      try {
+        // Check if this was an interrupted signup with no Firestore doc
+        // We can't read the doc without being signed in, so just send to login
+      } catch(_) {}
+    } else if (e.code === 'auth/invalid-email') {
+      msg = 'Please enter a valid email address.';
+    } else if (e.code === 'auth/weak-password') {
+      msg = 'Password must be at least 6 characters.';
+    } else if (e.message && e.message.includes('permissions')) {
+      msg = 'Setup error — please check your Firebase rules are published, then try again.';
+    }
+
+    errEl.textContent = msg;
+    errEl.className   = 'form-error show';
+  }
+}
+</script>
+<!-- Smartsupp Live Chat -->
+<script type="text/javascript">
+var _smartsupp = _smartsupp || {};
+_smartsupp.key = 'e074775f8766e30f72a60b6941af184692c32fe1';
+window.smartsupp||(function(d) {
+  var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
+  s=d.getElementsByTagName('script')[0];
+  c=d.createElement('script');
+  c.type='text/javascript';c.charset='utf-8';c.async=true;
+  c.src='https://www.smartsuppchat.com/loader.js?';
+  s.parentNode.insertBefore(c,s);
+})(document);
+</script>
+</body>
+</html>

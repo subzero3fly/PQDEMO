@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>PredictIQ — Copy Betting</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .expert-grid { display:grid; grid-template-columns:1fr; gap:14px; padding:12px 0; }
+    @media(min-width:640px){ .expert-grid { grid-template-columns:repeat(2,1fr); } }
+    .expert-card {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:16px; padding:18px;
+    }
+    .expert-head { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+    .expert-avatar {
+      width:46px; height:46px; border-radius:50%; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-family:var(--font-display,inherit); font-weight:800; font-size:16px; color:#fff;
+    }
+    .expert-name  { font-size:15px; font-weight:700; color:var(--text); display:block; }
+    .expert-tag   { font-size:12px; color:var(--text-dim); margin-top:2px; display:block; }
+    .expert-badge {
+      display:inline-flex; align-items:center; padding:2px 8px;
+      border-radius:99px; font-size:10.5px; font-weight:800;
+      background:rgba(242,179,65,.13); color:#f2b341;
+      border:1px solid rgba(242,179,65,.25); margin-left:6px;
+    }
+    .expert-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
+    .e-stat { background:var(--bg); border-radius:10px; padding:10px; text-align:center; }
+    .e-stat .val { font-size:17px; font-weight:800; color:var(--text); }
+    .e-stat .lbl { font-size:11px; color:var(--text-dim); margin-top:2px; }
+    .e-stat.green .val { color:#1fd17c; }
+    .wr-bar-row  { display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px; }
+    .wr-bar-row .wr-lbl { color:var(--text-dim); }
+    .wr-bar-row .wr-val { font-weight:700; color:#1fd17c; }
+    .wr-track { height:5px; background:var(--border); border-radius:99px; overflow:hidden; margin-bottom:14px; }
+    .wr-fill  { height:100%; background:#1fd17c; border-radius:99px; }
+    .cat-tags { font-size:12px; color:var(--text-dim); margin-bottom:14px; line-height:1.5; }
+    .cat-tags strong { color:var(--text); }
+    .follow-btn {
+      width:100%; height:42px; border-radius:99px;
+      font-size:14px; font-weight:700; cursor:pointer; font-family:inherit;
+      border:none; transition:opacity .15s;
+    }
+    .follow-btn:hover { opacity:.88; }
+    .follow-btn.following {
+      background:rgba(242,73,107,.12); color:#f2496b;
+      border:1px solid rgba(242,73,107,.25);
+    }
+    .follow-btn.follow {
+      background:var(--accent,#7c5cff); color:#fff;
+    }
+    .active-copy-banner {
+      background:linear-gradient(135deg,rgba(124,92,255,.12),rgba(124,92,255,.04));
+      border:1px solid rgba(124,92,255,.25); border-radius:14px;
+      padding:16px; margin-bottom:16px; display:none;
+    }
+    .acb-head { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+    .acb-name { font-size:15px; font-weight:700; color:var(--text); }
+    .acb-sub  { font-size:13px; color:var(--text-dim); }
+    .acb-stop {
+      margin-left:auto; padding:6px 16px; border-radius:99px;
+      background:none; border:1px solid rgba(242,73,107,.3);
+      color:#f2496b; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit;
+    }
+    .copy-pos-list { display:flex; flex-direction:column; gap:0; }
+    .copy-pos-row {
+      display:flex; align-items:center; gap:12px; padding:11px 0;
+      border-bottom:1px solid var(--border);
+    }
+    .copy-pos-row:last-child { border-bottom:none; }
+    .cp-side {
+      width:34px; height:34px; border-radius:8px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:11px; font-weight:800;
+    }
+    .cp-side.yes { background:rgba(31,209,124,.13); color:#1fd17c; }
+    .cp-side.no  { background:rgba(242,73,107,.13);  color:#f2496b; }
+    .cp-info { flex:1; min-width:0; }
+    .cp-q    { font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .cp-meta { font-size:11.5px; color:var(--text-dim); margin-top:2px; }
+    .cp-amt  { font-size:13.5px; font-weight:700; color:var(--text); text-align:right; flex-shrink:0; }
+    .spinner-wrap { position:fixed; inset:0; background:var(--bg); z-index:999; display:flex; align-items:center; justify-content:center; }
+    .spinner { width:30px; height:30px; border-radius:50%; border:3px solid var(--border); border-top-color:var(--accent,#7c5cff); animation:spin .7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .toast-msg { position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(16px); background:var(--surface); border:1px solid var(--border); border-radius:99px; padding:9px 20px; font-size:14px; font-weight:600; color:var(--text); z-index:500; opacity:0; transition:opacity .25s,transform .25s; white-space:nowrap; }
+    .toast-msg.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    .toast-msg.ok  { border-color:#1fd17c; color:#1fd17c; }
+    .toast-msg.err { border-color:#f2496b; color:#f2496b; }
+  </style>
+</head>
+<body>
+
+<div class="spinner-wrap" id="loader"><div class="spinner"></div></div>
+
+<header class="site-header" id="siteHeader" style="display:none;">
+  <div class="header-row">
+    <a href="index.html" class="brand">
+      <svg class="brand-mark icon" viewBox="0 0 32 32" fill="none" stroke="currentColor">
+        <path d="M16 2 28 9v14L16 30 4 23V9Z" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M9 18l4.5-6 4 4L23 10" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="23" cy="10" r="1.8" fill="currentColor" stroke="none"/>
+      </svg>
+      <span class="brand-name">Predict<span>IQ</span></span>
+    </a>
+    <nav class="category-nav" style="flex:1;" aria-label="Categories">
+      <a href="index.html">Trending</a>
+      <a href="breaking.html">Breaking</a>
+    </nav>
+    <div class="header-actions">
+      <div class="balance-pair">
+        <span><span class="b-label">Balance</span><span class="b-value" id="headerBalance">$0.00</span></span>
+      </div>
+      <details class="profile-menu">
+        <summary aria-label="Account menu">
+          <span class="avatar" id="headerAvatar" style="display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;"></span>
+        </summary>
+        <div class="profile-panel">
+          <div class="profile-id">
+            <div>
+              <strong id="panelName" style="display:block;font-size:15px;color:var(--text);"></strong>
+              <span class="addr" id="panelAccountId"></span>
+            </div>
+          </div>
+          <div class="menu-list">
+            <a href="portfolio.html"><svg class="icon" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Portfolio</a>
+            <a href="index.html"><svg class="icon" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 9h18" stroke="currentColor" stroke-width="1.6"/></svg>Markets</a>
+          </div>
+          <hr>
+          <div class="profile-links"><a href="#" onclick="if(typeof smartsupp==='function'){smartsupp('chat','open');return false;}">Support</a><a href="#">Terms of Use</a></div>
+          <a class="logout-btn" href="#" id="logoutBtn">Sign Out</a>
+        </div>
+      </details>
+    </div>
+  </div>
+</header>
+
+<main class="page" id="mainContent" style="display:none; padding-top:14px;">
+
+  <div style="margin-bottom:16px;">
+    <h1 style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:4px;">Copy Betting</h1>
+    <p style="font-size:13.5px;color:var(--text-dim);">Follow a top expert predictor and their bets automatically mirror to your account.</p>
+  </div>
+
+  <!-- Active copy banner -->
+  <div class="active-copy-banner" id="activeBanner">
+    <div class="acb-head">
+      <div class="expert-avatar" id="activeBannerAvatar" style="width:36px;height:36px;font-size:13px;"></div>
+      <div>
+        <div class="acb-name" id="activeBannerName">—</div>
+        <div class="acb-sub" id="activeBannerSub">—</div>
+      </div>
+      <button class="acb-stop" onclick="stopCopying()">Stop</button>
+    </div>
+    <div id="activeCopyPositions" class="copy-pos-list"></div>
+  </div>
+
+  <div class="eyebrow" style="margin-bottom:12px;">Expert Predictors</div>
+  <div class="expert-grid" id="expertGrid"></div>
+
+</main>
+
+<!-- Confirm follow modal -->
+<div id="followModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.65);align-items:flex-end;justify-content:center;" onclick="if(event.target===this)closeFollowModal()">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:480px;">
+    <h3 style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px;" id="followModalTitle">Follow Expert</h3>
+    <p style="font-size:13.5px;color:var(--text-dim);margin-bottom:18px;" id="followModalSub">This expert will automatically place bets on your behalf.</p>
+    <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:18px;font-size:13px;color:var(--text-dim);line-height:1.6;">
+      Your risk per bet is set in your copy config. Bets are limited by your daily maximum. You can stop following at any time.
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeFollowModal()" style="flex:1;height:44px;border-radius:99px;background:none;border:1px solid var(--border);color:var(--text-dim);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Cancel</button>
+      <button id="confirmFollowBtn" onclick="confirmFollow()" style="flex:1;height:44px;border-radius:99px;background:var(--accent,#7c5cff);color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:inherit;">Start Following</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-msg" id="toast"></div>
+
+<nav class="tab-bar" aria-label="Primary">
+  <a href="index.html">
+    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M4 11.5 12 4l8 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-5h4v5h3a1 1 0 0 0 1-1v-9" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+    Home
+  </a>
+  <a href="search.html">
+    <svg class="icon" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    Search
+  </a>
+  <a href="portfolio.html">
+    <svg class="icon" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    Portfolio
+  </a>
+  <a href="copytrade.html" class="is-active">
+    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    Copy
+  </a>
+  <a href="breaking.html">
+    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Breaking
+  </a>
+</nav>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="prediction-engine.js"></script>
+<script src="copy-betting-engine.js"></script>
+<script>
+var currentUser   = null;
+var userData      = null;
+var activeCopyId  = null;   // expertId currently being followed
+var pendingExpert = null;   // expert awaiting confirmation
+
+var EXPERT_META = {
+  expert_aria:    { tag:'Politics & News Analyst',      color:'#7c5cff' },
+  expert_marco:   { tag:'Sports & Entertainment',        color:'#3b82f6' },
+  expert_priya:   { tag:'Crypto & Finance Forecaster',  color:'#f59e0b' },
+  expert_tobias:  { tag:'Sports & Politics Predictor',  color:'#ef4444' },
+  expert_celeste: { tag:'Politics & Culture Expert',    color:'#8b5cf6' },
+  expert_jin:     { tag:'Crypto & Sports Analyst',      color:'#10b981' },
+  expert_soren:   { tag:'Finance & Economy Strategist', color:'#f97316' },
+  expert_fatima:  { tag:'Culture & Geopolitics Expert', color:'#06b6d4' },
+  expert_dmitri:  { tag:'Crypto & Geopolitics',         color:'#ec4899' },
+  expert_lena:    { tag:'Sports & Economy Analyst',     color:'#84cc16' }
+};
+
+function pToast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'toast-msg '+(type||'ok');
+  setTimeout(function(){ t.classList.add('show'); }, 10);
+  setTimeout(function(){ t.classList.remove('show'); }, 3200);
+}
+
+function pFmt(n) {
+  return '$'+(parseFloat(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+// ── Render expert grid ──────────────────────────────────────────────────────
+function renderExperts() {
+  var experts = copyBettingEngine.getExperts();
+  var grid    = document.getElementById('expertGrid');
+  grid.innerHTML = experts.map(function(e) {
+    var meta     = EXPERT_META[e.id] || {tag:'Market Expert', color:'var(--accent)'};
+    var wr       = Math.round(e.winRate * 100);
+    var cats     = e.categories.map(function(c){ return c.charAt(0).toUpperCase()+c.slice(1); }).join(', ');
+    var freq     = Math.round(e.freqMs / 60000);
+    var initials = e.name.split(' ').map(function(w){ return w[0]; }).join('').slice(0,2);
+    var isActive = activeCopyId === e.id;
+    var isTop    = e.winRate >= 0.87;
+    return '<div class="expert-card">'+
+      '<div class="expert-head">'+
+        '<div class="expert-avatar" style="background:'+meta.color+'cc;">'+initials+'</div>'+
+        '<div>'+
+          '<span class="expert-name">'+e.name+(isTop?'<span class="expert-badge">Top</span>':'')+'</span>'+
+          '<span class="expert-tag">'+meta.tag+'</span>'+
+        '</div>'+
+      '</div>'+
+      '<div class="expert-stats">'+
+        '<div class="e-stat green"><div class="val">'+wr+'%</div><div class="lbl">Win Rate</div></div>'+
+        '<div class="e-stat"><div class="val">~'+freq+'m</div><div class="lbl">Frequency</div></div>'+
+        '<div class="e-stat"><div class="val">'+e.categories.length+'</div><div class="lbl">Categories</div></div>'+
+      '</div>'+
+      '<div class="wr-bar-row"><span class="wr-lbl">Prediction accuracy</span><span class="wr-val">'+wr+'%</span></div>'+
+      '<div class="wr-track"><div class="wr-fill" style="width:'+wr+'%;"></div></div>'+
+      '<div class="cat-tags"><strong>Specialises in:</strong> '+cats+'</div>'+
+      (isActive
+        ? '<button class="follow-btn following" onclick="stopCopying()">Stop Following</button>'
+        : '<button class="follow-btn follow" data-id="'+e.id+'" data-name="'+e.name+'" onclick="openFollowModal(this.dataset.id,this.dataset.name)" '+(activeCopyId?'disabled style="opacity:.45;cursor:not-allowed;"':'')+'>'+(activeCopyId?'Following Another':'Follow')+'</button>'
+      )+
+    '</div>';
+  }).join('');
+}
+
+// ── Active copy banner ──────────────────────────────────────────────────────
+async function renderActiveBanner() {
+  var banner = document.getElementById('activeBanner');
+  if (!activeCopyId) { banner.style.display = 'none'; return; }
+  var experts = copyBettingEngine.getExperts();
+  var expert  = experts.find(function(e){ return e.id === activeCopyId; });
+  if (!expert) { banner.style.display = 'none'; return; }
+  var meta = EXPERT_META[expert.id] || {tag:'Market Expert', color:'var(--accent)'};
+  var initials = expert.name.split(' ').map(function(w){ return w[0]; }).join('').slice(0,2);
+  document.getElementById('activeBannerAvatar').textContent  = initials;
+  document.getElementById('activeBannerAvatar').style.background = meta.color+'cc';
+  document.getElementById('activeBannerName').textContent    = expert.name;
+  document.getElementById('activeBannerSub').textContent     = meta.tag+' · Currently following';
+  banner.style.display = 'block';
+
+  // Load active copy positions
+  try {
+    var snap = await db.collection('copyPositions')
+      .where('userId','==',currentUser.uid)
+      .where('status','==','open')
+      .get();
+    if (snap.empty) {
+      document.getElementById('activeCopyPositions').innerHTML =
+        '<p style="font-size:13px;color:var(--text-dim);margin-top:10px;">No open positions yet. Waiting for next expert bet.</p>';
+      return;
+    }
+    // Fetch market questions
+    var mids = [...new Set(snap.docs.map(function(d){ return d.data().marketId; }))];
+    var qmap = {};
+    for (var i=0;i<mids.length;i+=10) {
+      var chunk = mids.slice(i,i+10);
+      var ms = await db.collection('markets').where(firebase.firestore.FieldPath.documentId(),'in',chunk).get();
+      ms.forEach(function(d){ qmap[d.id]=d.data().question||d.id; });
+    }
+    document.getElementById('activeCopyPositions').innerHTML = snap.docs.map(function(d){
+      var p = d.data();
+      var q = (qmap[p.marketId]||'').slice(0,55)||'—';
+      return '<div class="copy-pos-row">'+
+        '<div class="cp-side '+(p.side==='YES'?'yes':'no')+'">'+p.side+'</div>'+
+        '<div class="cp-info"><div class="cp-q">'+q+'</div><div class="cp-meta">Entry: '+(p.entryProbability||'—')+'%</div></div>'+
+        '<div class="cp-amt">'+pFmt(p.stake||0)+'</div>'+
+      '</div>';
+    }).join('');
+  } catch(e) { console.warn('Copy positions load error:', e); }
+}
+
+// ── Follow / Stop ───────────────────────────────────────────────────────────
+function openFollowModal(expertId, expertName) {
+  if (activeCopyId) { pToast('Stop your current copy first.','err'); return; }
+  pendingExpert = { id: expertId, name: expertName };
+  document.getElementById('followModalTitle').textContent = 'Follow '+expertName;
+  document.getElementById('followModal').style.display = 'flex';
+}
+function closeFollowModal() {
+  document.getElementById('followModal').style.display = 'none';
+  pendingExpert = null;
+}
+
+async function confirmFollow() {
+  if (!pendingExpert || !currentUser) { closeFollowModal(); return; }
+  var expert = pendingExpert;
+  closeFollowModal();
+  document.getElementById('confirmFollowBtn').disabled = true;
+
+  try {
+    await db.collection('copyBetting').doc(currentUser.uid).set({
+      userId:        currentUser.uid,
+      expertId:      expert.id,
+      status:        'active',
+      startedAt:     firebase.firestore.FieldValue.serverTimestamp(),
+      betsToday:     0,
+      lastResetDate: ''
+    }, { merge: true });
+
+    activeCopyId = expert.id;
+    pToast('Now following '+expert.name, 'ok');
+
+    // Catch-up: place bets on all open markets immediately
+    await copyBettingEngine.userStartCopying(currentUser.uid, expert.id);
+
+    renderExperts();
+    await renderActiveBanner();
+  } catch(e) {
+    pToast('Failed to start following. Try again.', 'err');
+    console.error('confirmFollow error:', e);
+  }
+  document.getElementById('confirmFollowBtn').disabled = false;
+}
+
+async function stopCopying() {
+  if (!currentUser || !activeCopyId) return;
+  if (!confirm('Stop following this expert? Open positions remain until markets resolve.')) return;
+  try {
+    await db.collection('copyBetting').doc(currentUser.uid).update({
+      status:    'stopped',
+      stoppedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    activeCopyId = null;
+    document.getElementById('activeBanner').style.display = 'none';
+    renderExperts();
+    pToast('No longer following this expert.', 'ok');
+  } catch(e) {
+    pToast('Error stopping copy. Try again.', 'err');
+  }
+}
+
+// ── Auth + load ─────────────────────────────────────────────────────────────
+auth.onAuthStateChanged(async function(user) {
+  if (!user) { location.href = 'login.html'; return; }
+  currentUser = user;
+  predictionEngine.start();
+  copyBettingEngine.start();
+
+  try {
+    var snap = await db.collection('users').doc(user.uid).get();
+    if (!snap.exists) {
+      var chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',rand='';
+      for(var i=0;i<8;i++) rand+=chars[Math.floor(Math.random()*chars.length)];
+      await db.collection('users').doc(user.uid).set({
+        fullName:user.displayName||user.email.split('@')[0]||'User',
+        email:user.email||'',phone:'',accountId:'PIQ-'+rand,balance:0,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      snap = await db.collection('users').doc(user.uid).get();
+    }
+    userData = snap.data()||{};
+    if (typeof smartsupp === 'function') { smartsupp('name', userData.fullName||'User'); smartsupp('email', userData.email||''); }
+    var initials=(userData.fullName||'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    document.getElementById('headerAvatar').textContent    = initials;
+    document.getElementById('panelName').textContent       = userData.fullName||'User';
+    document.getElementById('panelAccountId').textContent  = userData.accountId||'';
+    document.getElementById('headerBalance').textContent   = pFmt(userData.balance);
+
+    document.getElementById('logoutBtn').addEventListener('click',function(e){
+      e.preventDefault(); auth.signOut().then(function(){ location.href='login.html'; });
+    });
+
+    // Check if already following
+    var cbSnap = await db.collection('copyBetting').doc(user.uid).get();
+    if (cbSnap.exists && cbSnap.data().status === 'active') {
+      activeCopyId = cbSnap.data().expertId || null;
+    }
+
+    renderExperts();
+    await renderActiveBanner();
+
+    document.getElementById('loader').style.display      = 'none';
+    document.getElementById('siteHeader').style.display  = 'block';
+    document.getElementById('mainContent').style.display = 'block';
+  } catch(e) {
+    console.error('copytrade load error:', e);
+    location.href = 'login.html';
+  }
+});
+</script>
+<!-- Smartsupp Live Chat -->
+<script type="text/javascript">
+var _smartsupp = _smartsupp || {};
+_smartsupp.key = 'e074775f8766e30f72a60b6941af184692c32fe1';
+window.smartsupp||(function(d) {
+  var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
+  s=d.getElementsByTagName('script')[0];
+  c=d.createElement('script');
+  c.type='text/javascript';c.charset='utf-8';c.async=true;
+  c.src='https://www.smartsuppchat.com/loader.js?';
+  s.parentNode.insertBefore(c,s);
+})(document);
+</script>
+
+
+<script>
+// Close profile panel when clicking outside
+document.addEventListener('click', function(e) {
+  document.querySelectorAll('.profile-menu').forEach(function(menu) {
+    if (!menu.contains(e.target)) menu.removeAttribute('open');
+  });
+});
+</script>
+
+</body>
+</html>

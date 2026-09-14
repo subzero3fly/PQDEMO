@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PredictIQ — Breaking</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-row">
+    <a class="brand" href="index.html" aria-label="PredictIQ home">
+      <svg class="brand-mark" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 2 28 9v14L16 30 4 23V9Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M9 18l4.5-6 4 4L23 10" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="23" cy="10" r="1.8" fill="currentColor"/>
+      </svg>
+      <span class="brand-name">Predict<span>IQ</span></span>
+    </a>
+    <div class="header-actions">
+      <div class="balance-pair">
+        <span><span class="b-label">Portfolio</span><span class="b-value">$0.00</span></span>
+        <span><span class="b-label">Cash</span><span class="b-value">$0.00</span></span>
+      </div>
+      <a class="btn btn-accent deposit-btn-header" href="portfolio.html#deposit-modal">Deposit</a>
+      
+      
+      <details class="profile-menu">
+        <summary aria-label="Account menu"><span class="avatar" id="headerAvatar" style="display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;"></span></summary>
+        <div class="profile-panel">
+          <div class="profile-id">
+            <span class="addr" id="panelAccountId">0xeA4A867c01…</span>
+          </div>
+          <div class="menu-list">
+            <a href="#"><svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 2 2 7l10 5 10-5-10-5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M2 12l10 5 10-5M2 17l10 5 10-5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>Leaderboard</a>
+            <a href="#"><svg class="icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v10M9 9.5c0-1.4 1.3-2 3-2s3 .7 3 1.8-1 1.5-3 1.9-3 .9-3 2 1.3 1.8 3 1.8 3-.6 3-1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Rewards</a>
+            <a href="#"><svg class="icon" viewBox="0 0 24 24" fill="none"><rect x="3" y="8" width="18" height="12" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M8 8V6a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2M14 8V6a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>APIs</a>
+          </div>
+          <hr>
+          <div class="profile-links">
+            <a href="#">Accuracy</a>
+            <a href="#">Support</a>
+            <a href="#">Status</a>
+            <a href="#">Documentation</a>
+            <a href="#">Help Center</a>
+            <a href="#">Terms of Use</a>
+          </div>
+          <a class="logout-btn" href="#">Logout</a>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <nav class="category-nav" aria-label="Categories">
+    <a href="index.html">Trending</a>
+    <a class="is-active" href="breaking.html">Breaking</a>
+    <a href="#">Politics</a>
+    <a href="#">Sports</a>
+    <a href="#">Esports</a>
+    <a href="#">Iran</a>
+    <a href="#">Finance</a>
+    <a href="#">Geopolitics</a>
+    <a href="#">Tech</a>
+    <a href="#">Culture</a>
+    <a href="#">Economy</a>
+  </nav>
+</header>
+
+<main>
+  <div class="breaking-banner">
+    <span class="date">Jun 23, 2026</span>
+    <h2>Breaking News</h2>
+    <p style="color:var(--text-dim);font-size:13.5px;margin-top:6px;max-width:62%;">The markets that moved the most in the last 24 hours.</p>
+    <svg class="pulse-icon" viewBox="0 0 24 24" fill="none"><path d="M2 12h4l2 8 4-16 2 8h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+
+  <div class="pill-row" id="breakingPills">
+    <button class="pill is-active" data-cat="all"      onclick="setBreakingCat(this)">All</button>
+    <button class="pill"           data-cat="politics"  onclick="setBreakingCat(this)">Politics</button>
+    <button class="pill"           data-cat="world"     onclick="setBreakingCat(this)">World</button>
+    <button class="pill"           data-cat="sports"    onclick="setBreakingCat(this)">Sports</button>
+    <button class="pill"           data-cat="crypto"    onclick="setBreakingCat(this)">Crypto</button>
+    <button class="pill"           data-cat="finance"   onclick="setBreakingCat(this)">Finance</button>
+    <button class="pill"           data-cat="tech"      onclick="setBreakingCat(this)">Tech</button>
+    <button class="pill"           data-cat="culture"   onclick="setBreakingCat(this)">Culture</button>
+  </div>
+
+  <ol class="breaking-list" id="breakingList"></ol>
+  <div id="breakingEmpty" style="display:none;text-align:center;padding:60px 20px;color:var(--text-faint);">
+    <p style="font-size:15px;font-weight:600;margin-bottom:6px;">No breaking markets yet</p>
+    <p style="font-size:13.5px;">Markets with the biggest probability movements will appear here.</p>
+  </div>
+  <div id="breakingLoader" style="text-align:center;padding:40px 20px;color:var(--text-faint);">
+    <div style="width:24px;height:24px;border-radius:50%;border:2.5px solid var(--border);border-top-color:var(--accent);animation:spin .7s linear infinite;margin:0 auto 10px;"></div>
+    <p style="font-size:13.5px;">Loading markets...</p>
+  </div>
+  <style>@keyframes spin{to{transform:rotate(360deg);}}</style>
+</main>
+
+<a class="get-updates" href="#" id="getUpdatesBtn" onclick="handleGetUpdates(event)">
+  <svg class="icon-sm" viewBox="0 0 24 24" fill="none"><path d="M18 9.5a6 6 0 0 0-12 0c0 3-1 4.5-1.7 5.5A1 1 0 0 0 5 16.5h14a1 1 0 0 0 .7-1.5C19 14 18 12.5 18 9.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9.5 19a2.5 2.5 0 0 0 5 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+  Get updates
+</a>
+
+<nav class="tab-bar" aria-label="Primary">
+  <a href="index.html">
+    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M4 11.5 12 4l8 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-5h4v5h3a1 1 0 0 0 1-1v-9" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+    Home
+  </a>
+  <a href="search.html">
+    <svg class="icon" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8"/><path d="M20 20l-4.3-4.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    Search
+  </a>
+  <a class="is-active" href="breaking.html">
+    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M3 12h4l2 7 4-14 2 7h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Breaking
+  </a>
+  <a href="copytrade.html">
+    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    Copy
+  </a>
+  <a href="portfolio.html">
+    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    $0.00
+  </a>
+</nav>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="profile-socials">
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3l8.5 9.6L3.6 21h2.4l6.7-7.4L18 21h3l-9-10.1L20.4 3H18l-6.2 6.9L7 3H3Z"/></svg>
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M19 5.5c-1.1-.5-2.3-.9-3.5-1.1l-.2.4c1.1.3 2.1.7 3 1.3-2.6-1.2-5.6-1.2-8.2 0 .9-.6 1.9-1 3-1.3l-.2-.4C11.7 4.4 10.5 4.8 9.4 5.3 6.9 8.1 6.2 11 6.5 13.8a10.4 10.4 0 0 0 3.2 1.6l.5-.9c-.6-.2-1.1-.5-1.6-.8.4.2.9.4 1.4.6 2 .8 4.2.8 6.2 0 .5-.2 1-.4 1.4-.6-.5.3-1 .6-1.6.8l.5.9a10.4 10.4 0 0 0 3.2-1.6c.4-3.3-.5-6.2-2.7-8.3ZM10.6 12.3c-.6 0-1.1-.6-1.1-1.3s.5-1.3 1.1-1.3 1.1.6 1.1 1.3-.5 1.3-1.1 1.3Zm4.8 0c-.6 0-1.1-.6-1.1-1.3s.5-1.3 1.1-1.3 1.1.6 1.1 1.3-.5 1.3-1.1 1.3Z"/></svg>
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><circle cx="17.2" cy="6.8" r="1" fill="currentColor"/></svg>
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M14.5 2h2.7c.2 1.6 1.2 3 3.3 3.2v2.7c-1.3 0-2.4-.4-3.3-1v6.4a5 5 0 1 1-5-5c.3 0 .6 0 .9.1v2.8a2.3 2.3 0 1 0 1.6 2.2V2Z"/></svg>
+    </div>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="#">Accuracy</a><a href="#" onclick="if(typeof smartsupp==='function'){smartsupp('chat','open');return false;}">Support</a><a href="#">Status</a><a href="#">Terms of Use</a>
+    </nav>
+    <span style="font-size:12px;color:var(--text-faint);">© 2026 PredictIQ</span>
+  </div>
+</footer>
+
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="prediction-engine.js"></script>
+<script>
+function fmtBal(n) {
+  return '$' + (parseFloat(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+auth.onAuthStateChanged(async function(user) {
+  if (!user) { window.location.href = 'login.html'; return; }
+  predictionEngine.start();
+
+  try {
+    var snap = await db.collection('users').doc(user.uid).get();
+
+    // Recovery: if doc missing, recreate it
+    if (!snap.exists) {
+      var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', rand = '';
+      for (var i=0;i<8;i++) rand += chars[Math.floor(Math.random()*chars.length)];
+      await db.collection('users').doc(user.uid).set({
+        fullName: user.displayName || user.email.split('@')[0] || 'User',
+        email: user.email||'', phone:'', accountId:'PIQ-'+rand, balance:0,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      snap = await db.collection('users').doc(user.uid).get();
+    }
+
+    var ud = snap.data() || {};
+    var bal = fmtBal(ud.balance);
+    var initials = (ud.fullName||'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    if (typeof smartsupp === 'function') { smartsupp('name', ud.fullName||'User'); smartsupp('email', ud.email||''); }
+
+    // Header balance-pair .b-value spans
+    var bvals = document.querySelectorAll('.balance-pair .b-value');
+    bvals.forEach(function(el){ el.textContent = bal; });
+
+    // Tab bar portfolio link — contains the $0.00 text node
+    document.querySelectorAll('.tab-bar a').forEach(function(a){
+      if (a.getAttribute('href') === 'portfolio.html') {
+        // Replace the text node (last child) with real balance
+        var nodes = a.childNodes;
+        for (var i = nodes.length-1; i >= 0; i--) {
+          if (nodes[i].nodeType === 3 && nodes[i].textContent.trim()) {
+            nodes[i].textContent = '
+    ' + bal + '
+  ';
+            break;
+          }
+        }
+      }
+    });
+
+    // Avatar initials
+    var av = document.querySelector('.profile-menu .avatar, #headerAvatar');
+    if (av) av.textContent = initials;
+
+    // Profile panel name and account ID
+    var pname = document.querySelector('#panelName');
+    var paddr = document.querySelector('#panelAccountId, .profile-panel .addr');
+    if (pname) pname.textContent = ud.fullName || 'User';
+    if (paddr) paddr.textContent = ud.accountId || '';
+
+    // Logout button
+    document.querySelectorAll('.logout-btn').forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        e.preventDefault();
+        auth.signOut().then(function(){ window.location.href = 'login.html'; });
+      });
+    });
+  } catch(e) {
+    console.warn('Auth balance error:', e);
+    window.location.href = 'login.html';
+  }
+});
+</script>
+
+
+<script>
+// ── Breaking page market feed ──────────────────────────────────────────────
+var allBreaking  = [];
+var breakingCat  = 'all';
+
+// Category pill filter
+function setBreakingCat(btn) {
+  breakingCat = btn.dataset.cat || 'all';
+  document.querySelectorAll('#breakingPills .pill').forEach(function(p){
+    p.classList.toggle('is-active', p === btn);
+  });
+  renderBreaking();
+}
+
+// Spark SVG — generates a mini line from probability history points
+function buildSpark(history, isUp) {
+  if (!history || history.length < 2) {
+    // Flat line fallback
+    var colour = isUp ? 'var(--yes)' : 'var(--no)';
+    return '<svg class="b-spark" viewBox="0 0 56 24" fill="none"><path d="M2 12 54 12" stroke="' + colour + '" stroke-width="2" stroke-linecap="round"/></svg>';
+  }
+  var pts = history.slice(-6); // last 6 snapshots max
+  var n   = pts.length;
+  var minP = Math.min.apply(null, pts.map(function(p){return p.probability||50;}));
+  var maxP = Math.max.apply(null, pts.map(function(p){return p.probability||50;}));
+  var range = maxP - minP || 1;
+  var colour = isUp ? 'var(--yes)' : 'var(--no)';
+  var path = pts.map(function(p, i) {
+    var x = 2 + (i / (n-1)) * 52;
+    var y = 22 - ((p.probability - minP) / range) * 20;
+    return (i===0?'M':'L') + x.toFixed(1) + ' ' + y.toFixed(1);
+  }).join(' ');
+  return '<svg class="b-spark" viewBox="0 0 56 24" fill="none"><path d="' + path + '" stroke="' + colour + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+
+// Category icon for b-icon
+function breakingIcon(cat) {
+  var icons = {
+    politics:    '<path d="M3 21h18M5 21V7l7-5 7 5v14" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>',
+    sports:      '<circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.4"/><path d="M3 12h18M12 4a13 13 0 0 0 0 16" stroke="currentColor" stroke-width="1.2"/>',
+    crypto:      '<circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.4"/><path d="M10 8h3.2a2 2 0 0 1 0 4H10m0 0h3.6a2 2 0 0 1 0 4H10M10 8v8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>',
+    finance:     '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>',
+    tech:        '<rect x="2" y="4" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M8 20h8M12 18v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
+    culture:     '<path d="M12 2c1 3 1 5 0 8-1-3-1-5 0-8Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 11h6l2 9H7l2-9Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>',
+    geopolitics: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.4"/><path d="M15 9l-2 6-6 2 2-6 6-2Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>',
+    economy:     '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><polyline points="16 7 22 7 22 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
+  };
+  var star = '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>';
+  return '<svg class="icon-sm" viewBox="0 0 24 24" fill="none">' + (icons[cat] || star) + '</svg>';
+}
+
+function renderBreaking() {
+  var list   = document.getElementById('breakingList');
+  var empty  = document.getElementById('breakingEmpty');
+  var loader = document.getElementById('breakingLoader');
+  if (loader) loader.style.display = 'none';
+
+  var filtered = breakingCat === 'all'
+    ? allBreaking
+    : allBreaking.filter(function(m){ return m.category === breakingCat; });
+
+  if (!filtered.length) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  list.innerHTML = filtered.map(function(m, i) {
+    var prob   = Math.round(m.currentProbability || m.startingProbability || 50);
+    var delta  = m.delta24h || 0;
+    var isUp   = delta >= 0;
+    var deltaStr = (isUp ? '▲ ' : '▼ ') + Math.abs(delta).toFixed(0) + '%';
+    var deltaClass = isUp ? 'up' : 'down';
+    var spark  = buildSpark(m.recentHistory, isUp);
+    return '<li class="breaking-row" onclick="location.href=\'market-detail.html?id=' + m.id + '\'" style="cursor:pointer;">' +
+      '<span class="b-rank">' + (i+1) + '</span>' +
+      '<span class="b-icon">' + breakingIcon(m.category) + '</span>' +
+      '<span class="b-title">' + (m.question||'Untitled') + '</span>' +
+      '<span class="b-trend">' +
+        '<span class="b-pct">' + prob + '%</span>' +
+        '<span class="b-delta ' + deltaClass + '">' + deltaStr + '</span>' +
+      '</span>' +
+      spark +
+      '<svg class="icon b-chev" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+    '</li>';
+  }).join('');
+}
+
+// Get updates / notification subscribe
+function handleGetUpdates(e) {
+  e.preventDefault();
+  if (!('Notification' in window)) {
+    showBreakingToast('Notifications are not supported in this browser.', 'err'); return;
+  }
+  if (Notification.permission === 'granted') {
+    showBreakingToast('You are already subscribed to updates.', 'ok'); return;
+  }
+  Notification.requestPermission().then(function(perm) {
+    if (perm === 'granted') {
+      new Notification('PredictIQ', { body: 'You will now receive breaking market updates.' });
+      showBreakingToast('Subscribed to breaking updates.', 'ok');
+    } else {
+      showBreakingToast('Notification permission denied.', 'err');
+    }
+  });
+}
+
+function showBreakingToast(msg, type) {
+  var t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:9px 20px;font-size:14px;font-weight:600;z-index:500;color:' + (type==='err'?'var(--no)':'var(--yes)') + ';';
+  document.body.appendChild(t);
+  setTimeout(function(){ t.style.opacity='0';t.style.transition='opacity .3s'; }, 2400);
+  setTimeout(function(){ t.remove(); }, 2800);
+}
+
+// Load markets from Firestore — sort by biggest absolute 24h movement
+async function loadBreakingMarkets() {
+  try {
+    var marketsSnap = await db.collection('markets')
+      .where('status','==','active')
+      .get();
+
+    if (marketsSnap.empty) {
+      document.getElementById('breakingLoader').style.display = 'none';
+      document.getElementById('breakingEmpty').style.display  = 'block';
+      return;
+    }
+
+    // Fetch recent probability history for each market in parallel
+    var markets = marketsSnap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+
+    var historyFetches = markets.map(function(m) {
+      return db.collection('markets').doc(m.id)
+        .collection('probabilityHistory')
+        .orderBy('timestamp','desc')
+        .limit(12)
+        .get()
+        .then(function(snap){
+          return snap.docs.map(function(d){ return d.data(); }).reverse();
+        })
+        .catch(function(){ return []; });
+    });
+
+    var liveSnaps = markets.map(function(m) {
+      return db.collection('marketLive').doc(m.id).get().catch(function(){ return {exists:false}; });
+    });
+
+    var [histories, lives] = await Promise.all([
+      Promise.all(historyFetches),
+      Promise.all(liveSnaps)
+    ]);
+
+    allBreaking = markets.map(function(m, i) {
+      var history = histories[i];
+      var live    = lives[i].exists ? lives[i].data() : {};
+      var currentProb = typeof live.currentProbability === 'number'
+        ? live.currentProbability
+        : (m.startingProbability || 50);
+
+      // Calculate 24h delta from oldest snapshot in last 12 entries
+      var delta24h = 0;
+      if (history.length >= 2) {
+        var oldest = history[0].probability || currentProb;
+        delta24h   = currentProb - oldest;
+      }
+      return Object.assign({}, m, {
+        currentProbability: currentProb,
+        totalVolume:        live.totalVolume || m.totalVolume || 0,
+        recentHistory:      history,
+        delta24h:           delta24h
+      });
+    });
+
+    // Sort by biggest absolute movement
+    allBreaking.sort(function(a, b){
+      return Math.abs(b.delta24h) - Math.abs(a.delta24h);
+    });
+
+    renderBreaking();
+  } catch(e) {
+    console.error('Breaking load error:', e);
+    document.getElementById('breakingLoader').style.display = 'none';
+    document.getElementById('breakingEmpty').style.display  = 'block';
+  }
+}
+
+loadBreakingMarkets();
+</script>
+
+<!-- Smartsupp Live Chat -->
+<script type="text/javascript">
+var _smartsupp = _smartsupp || {};
+_smartsupp.key = 'e074775f8766e30f72a60b6941af184692c32fe1';
+window.smartsupp||(function(d) {
+  var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
+  s=d.getElementsByTagName('script')[0];
+  c=d.createElement('script');
+  c.type='text/javascript';c.charset='utf-8';c.async=true;
+  c.src='https://www.smartsuppchat.com/loader.js?';
+  s.parentNode.insertBefore(c,s);
+})(document);
+</script>
+
+
+<script>
+// Close profile panel when clicking outside
+document.addEventListener('click', function(e) {
+  document.querySelectorAll('.profile-menu').forEach(function(menu) {
+    if (!menu.contains(e.target)) menu.removeAttribute('open');
+  });
+});
+</script>
+
+</body>
+</html>
