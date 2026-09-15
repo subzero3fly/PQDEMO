@@ -608,7 +608,6 @@ async function placeBet(side) {
 
     // Update local balance display
     userData.balance = (userData.balance||0) - stake;
-    document.getElementById('headerBalance').textContent = fmtBal(userData.balance);
 
     showToast(side+' bet placed — '+fmtBal(stake),'ok');
     document.getElementById('betAmount').value = '';
@@ -687,7 +686,6 @@ auth.onAuthStateChanged(async function(user) {
     document.getElementById('headerAvatar').textContent   = initials;
     document.getElementById('panelName').textContent      = userData.fullName||'User';
     document.getElementById('panelAccountId').textContent = userData.accountId||'';
-    document.getElementById('headerBalance').textContent  = fmtBal(userData.balance);
   } catch(e){ console.warn('User load error:',e); }
 
   document.getElementById('logoutBtn').addEventListener('click',function(e){

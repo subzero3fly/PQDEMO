@@ -125,29 +125,42 @@ auth.onAuthStateChanged(async function(user) {
   try {
     var snap = await db.collection('users').doc(user.uid).get();
     if (!snap.exists) {
-      // Interrupted signup — recreate doc
       var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', rand = '';
       for (var i=0;i<8;i++) rand += chars[Math.floor(Math.random()*chars.length)];
-      var accountId = 'PIQ-' + rand;
       await db.collection('users').doc(user.uid).set({
         fullName: user.displayName || user.email.split('@')[0] || 'User',
-        email: user.email || '', phone: '', accountId: accountId, balance: 0,
+        email: user.email || '', phone: '', accountId: 'PIQ-'+rand, balance: 0,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       snap = await db.collection('users').doc(user.uid).get();
     }
     var ud = snap.data() || {};
+
+    // Switch guest → auth header
     guestEl.style.display = 'none';
     authEl.style.display  = 'flex';
 
-    // Populate header
+    // Avatar initials
     var initials = (ud.fullName || 'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-    document.getElementById('headerAvatar').textContent  = initials;
-    document.getElementById('panelName').textContent     = ud.fullName || 'User';
-    document.getElementById('panelAccountId').textContent= ud.accountId || '';
-    document.getElementById('headerBalance').textContent = '$' + (ud.balance||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-    if (typeof smartsupp === 'function') { smartsupp('name', ud.fullName||'User'); smartsupp('email', ud.email||''); }
-    });
+    var av = document.getElementById('headerAvatar');
+    if (av) av.textContent = initials;
+
+    // Profile panel
+    var pn = document.getElementById('panelName');
+    var pa = document.getElementById('panelAccountId');
+    if (pn) pn.textContent = ud.fullName || 'User';
+    if (pa) pa.textContent = ud.accountId || '';
+
+    if (typeof smartsupp === 'function') {
+      smartsupp('name', ud.fullName || 'User');
+      smartsupp('email', ud.email || '');
+    }
+  } catch(e) {
+    console.warn('Header auth error:', e);
+    guestEl.style.display = 'flex';
+    authEl.style.display  = 'none';
+  }
+});
 
     // All .b-value spans in balance-pair
     var bvals = document.querySelectorAll('.balance-pair .b-value');

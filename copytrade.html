@@ -396,7 +396,6 @@ auth.onAuthStateChanged(async function(user) {
     document.getElementById('headerAvatar').textContent    = initials;
     document.getElementById('panelName').textContent       = userData.fullName||'User';
     document.getElementById('panelAccountId').textContent  = userData.accountId||'';
-    document.getElementById('headerBalance').textContent   = pFmt(userData.balance);
 
     document.getElementById('logoutBtn').addEventListener('click',function(e){
       e.preventDefault(); auth.signOut().then(function(){ location.href='login.html'; });
