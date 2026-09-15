@@ -28,43 +28,20 @@
 
       <!-- AUTH: shown when logged in -->
       <div id="headerAuth" style="display:none;align-items:center;gap:10px;">
-        <div class="balance-pair" id="headerBalancePair">
-          <span><span class="b-label">Balance</span><span class="b-value" id="headerBalance">$0.00</span></span>
-        </div>
-        <a class="btn btn-accent deposit-btn-header" href="portfolio.html">Deposit</a>
         <details class="profile-menu" id="headerProfileMenu">
           <summary aria-label="Account menu">
             <span class="avatar" id="headerAvatar" style="display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;"></span>
           </summary>
           <div class="profile-panel">
-            <div class="profile-id">
-              <div>
-                <strong id="panelName" style="display:block;font-size:15px;color:var(--text);"></strong>
-                <span class="addr" id="panelAccountId"></span>
-              </div>
+            <div style="padding:4px 0 12px;">
+              <strong id="panelName" style="display:block;font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;"></strong>
+              <span id="panelAccountId" style="font-size:12px;color:var(--text-faint,#9498a4);font-family:monospace;"></span>
             </div>
-            <div class="menu-list">
-              <a href="copytrade.html">
-    <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    Copy
-  </a>
-  <a href="portfolio.html">
-                <svg class="icon" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-                Portfolio
-              </a>
-              <a href="portfolio.html">
-                <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-                Deposit
-              </a>
-            </div>
-            <hr>
-            <div class="profile-links">
-              <a href="#">Support</a>
-              <a href="#">Terms of Use</a>
-            </div>
-            <a class="logout-btn" href="#" id="headerLogout">Sign Out</a>
+            <hr style="border:none;border-top:1px solid var(--border);margin:0 0 12px;">
+            <button id="kycBtn" onclick="openKYC()" style="width:100%;height:40px;border-radius:99px;background:var(--accent-soft,rgba(124,92,255,.14));color:var(--accent,#7c5cff);border:1px solid rgba(124,92,255,.25);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;">Verify Identity (KYC)</button>
+            <button id="logoutBtn" onclick="doLogout()" style="width:100%;height:40px;border-radius:99px;background:rgba(242,73,107,.1);color:#f2496b;border:1px solid rgba(242,73,107,.2);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Sign Out</button>
           </div>
-        </details>
+          </details>
       </div>
     </div>
   </div>
@@ -170,10 +147,6 @@ auth.onAuthStateChanged(async function(user) {
     document.getElementById('panelAccountId').textContent= ud.accountId || '';
     document.getElementById('headerBalance').textContent = '$' + (ud.balance||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     if (typeof smartsupp === 'function') { smartsupp('name', ud.fullName||'User'); smartsupp('email', ud.email||''); }
-
-    document.getElementById('headerLogout').addEventListener('click', function(e){
-      e.preventDefault();
-      auth.signOut().then(function(){ location.reload(); });
     });
 
     // All .b-value spans in balance-pair
@@ -428,14 +401,23 @@ window.smartsupp||(function(d) {
 </script>
 
 
-<script>
-// Close profile panel when clicking outside
-document.addEventListener('click', function(e) {
-  document.querySelectorAll('.profile-menu').forEach(function(menu) {
-    if (!menu.contains(e.target)) menu.removeAttribute('open');
-  });
-});
-</script>
 
+
+<script>
+// Close profile dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  var menu = document.querySelector('.profile-menu');
+  if (menu && !menu.contains(e.target)) menu.removeAttribute('open');
+});
+// Logout
+function doLogout() {
+  auth.signOut().then(function() { window.location.href = 'login.html'; });
+}
+// KYC — placeholder until third-party integration details provided
+function openKYC() {
+  // TODO: replace with real KYC provider integration
+  alert('KYC verification coming soon.');
+}
+</script>
 </body>
 </html>

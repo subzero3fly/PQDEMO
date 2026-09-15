@@ -109,29 +109,20 @@
       <a href="breaking.html">Breaking</a>
     </nav>
     <div class="header-actions">
-      <div class="balance-pair">
-        <span><span class="b-label">Balance</span><span class="b-value" id="headerBalance">$0.00</span></span>
-      </div>
-      <details class="profile-menu">
+        <details class="profile-menu">
         <summary aria-label="Account menu">
           <span class="avatar" id="headerAvatar" style="display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;"></span>
         </summary>
         <div class="profile-panel">
-          <div class="profile-id">
-            <div>
-              <strong id="panelName" style="display:block;font-size:15px;color:var(--text);"></strong>
-              <span class="addr" id="panelAccountId"></span>
+            <div style="padding:4px 0 12px;">
+              <strong id="panelName" style="display:block;font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;"></strong>
+              <span id="panelAccountId" style="font-size:12px;color:var(--text-faint,#9498a4);font-family:monospace;"></span>
             </div>
+            <hr style="border:none;border-top:1px solid var(--border);margin:0 0 12px;">
+            <button id="kycBtn" onclick="openKYC()" style="width:100%;height:40px;border-radius:99px;background:var(--accent-soft,rgba(124,92,255,.14));color:var(--accent,#7c5cff);border:1px solid rgba(124,92,255,.25);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;">Verify Identity (KYC)</button>
+            <button id="logoutBtn" onclick="doLogout()" style="width:100%;height:40px;border-radius:99px;background:rgba(242,73,107,.1);color:#f2496b;border:1px solid rgba(242,73,107,.2);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Sign Out</button>
           </div>
-          <div class="menu-list">
-            <a href="portfolio.html"><svg class="icon" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Portfolio</a>
-            <a href="index.html"><svg class="icon" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 9h18" stroke="currentColor" stroke-width="1.6"/></svg>Markets</a>
-          </div>
-          <hr>
-          <div class="profile-links"><a href="#" onclick="if(typeof smartsupp==='function'){smartsupp('chat','open');return false;}">Support</a><a href="#">Terms of Use</a></div>
-          <a class="logout-btn" href="#" id="logoutBtn">Sign Out</a>
-        </div>
-      </details>
+          </details>
     </div>
   </div>
 </header>
@@ -444,14 +435,23 @@ window.smartsupp||(function(d) {
 </script>
 
 
-<script>
-// Close profile panel when clicking outside
-document.addEventListener('click', function(e) {
-  document.querySelectorAll('.profile-menu').forEach(function(menu) {
-    if (!menu.contains(e.target)) menu.removeAttribute('open');
-  });
-});
-</script>
 
+
+<script>
+// Close profile dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  var menu = document.querySelector('.profile-menu');
+  if (menu && !menu.contains(e.target)) menu.removeAttribute('open');
+});
+// Logout
+function doLogout() {
+  auth.signOut().then(function() { window.location.href = 'login.html'; });
+}
+// KYC — placeholder until third-party integration details provided
+function openKYC() {
+  // TODO: replace with real KYC provider integration
+  alert('KYC verification coming soon.');
+}
+</script>
 </body>
 </html>

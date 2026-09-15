@@ -807,5 +807,21 @@ window.smartsupp||(function(d) {
 })(document);
 </script>
 
+<script>
+// Close profile dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  var menu = document.querySelector('.profile-menu');
+  if (menu && !menu.contains(e.target)) menu.removeAttribute('open');
+});
+// Logout
+function doLogout() {
+  auth.signOut().then(function() { window.location.href = 'login.html'; });
+}
+// KYC — placeholder until third-party integration details provided
+function openKYC() {
+  // TODO: replace with real KYC provider integration
+  alert('KYC verification coming soon.');
+}
+</script>
 </body>
 </html>
