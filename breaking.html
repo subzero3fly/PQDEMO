@@ -18,23 +18,23 @@
       </svg>
       <span class="brand-name">Predict<span>IQ</span></span>
     </a>
-        <div class="header-actions" style="position:relative;">
-      <!-- Guest: shown when not logged in -->
+        
+    <div class="header-actions" style="position:relative;">
       <div id="headerGuest" style="display:flex;gap:8px;align-items:center;">
-        <a href="login.html"  style="height:36px;padding:0 16px;border-radius:99px;border:1px solid var(--border);font-size:14px;font-weight:600;color:var(--text);display:inline-flex;align-items:center;text-decoration:none;">Sign In</a>
+        <a href="login.html" style="height:36px;padding:0 16px;border-radius:99px;border:1px solid var(--border);font-size:14px;font-weight:600;color:var(--text);display:inline-flex;align-items:center;text-decoration:none;">Sign In</a>
         <a href="signup.html" style="height:36px;padding:0 16px;border-radius:99px;background:var(--accent,#7c5cff);font-size:14px;font-weight:600;color:#fff;display:inline-flex;align-items:center;text-decoration:none;">Sign Up</a>
       </div>
-      <!-- Auth: shown when logged in -->
       <div id="headerAuth" style="display:none;align-items:center;position:relative;">
-        <button id="avatarBtn" onclick="toggleProfile(event)"
-          style="width:38px;height:38px;border-radius:50%;background:conic-gradient(from 200deg,#8ee3c8,#b6a4ff,#ffb6e0,#8ee3c8);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;font-family:inherit;">
-          <span id="headerAvatar"></span>
-        </button>
-        <div id="profilePanel"
-          style="display:none;position:absolute;top:46px;right:0;width:240px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 8px 32px rgba(0,0,0,.45);z-index:999;">
-          <div style="margin-bottom:12px;">
-            <div id="panelName" style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;"></div>
-            <div id="panelAccountId" style="font-size:12px;color:var(--text-faint,#9498a4);font-family:monospace;word-break:break-all;"></div>
+        <button id="avatarBtn" onclick="toggleProfile(event)" style="width:38px;height:38px;border-radius:50%;background:conic-gradient(from 200deg,#8ee3c8,#b6a4ff,#ffb6e0,#8ee3c8);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;font-family:inherit;"><span id="headerAvatar"></span></button>
+        <div id="profilePanel" style="display:none;position:absolute;top:46px;right:0;width:240px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 8px 32px rgba(0,0,0,.45);z-index:999;">
+          <div id="panelName" style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;"></div>
+          <div id="panelAccountId" style="font-size:12px;color:var(--text-faint,#9498a4);font-family:monospace;word-break:break-all;margin-bottom:12px;"></div>
+          <hr style="border:none;border-top:1px solid var(--border);margin:0 0 12px;">
+          <button onclick="openKYC()" style="width:100%;height:40px;border-radius:99px;background:var(--accent-soft,rgba(124,92,255,.14));color:var(--accent,#7c5cff);border:1px solid rgba(124,92,255,.25);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;">Verify Identity (KYC)</button>
+          <button onclick="doLogout()" style="width:100%;height:40px;border-radius:99px;background:rgba(242,73,107,.1);color:#f2496b;border:1px solid rgba(242,73,107,.2);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Sign Out</button>
+        </div>
+      </div>
+    </div>
           </div>
           <hr style="border:none;border-top:1px solid var(--border);margin:0 0 12px;">
           <button onclick="openKYC()"
@@ -428,11 +428,6 @@ window.smartsupp||(function(d) {
 
 
 <script>
-function toggleProfile(e) {
-  e.stopPropagation();
-  var panel = document.getElementById('profilePanel');
-  if (panel) panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
-}
 document.addEventListener('click', function(e) {
   var panel = document.getElementById('profilePanel');
   var btn   = document.getElementById('avatarBtn');
@@ -441,29 +436,13 @@ document.addEventListener('click', function(e) {
     panel.style.display = 'none';
   }
 });
-function doLogout() {
-  auth.signOut().then(function() { window.location.href = 'login.html'; });
-}
-function openKYC() {
-  alert('KYC verification coming soon.');
-}
-function populateHeader(ud) {
-  var initials = (ud.fullName || 'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-  var av = document.getElementById('headerAvatar');
-  var pn = document.getElementById('panelName');
-  var pa = document.getElementById('panelAccountId');
-  var ge = document.getElementById('headerGuest');
-  var ae = document.getElementById('headerAuth');
-  if (av) av.textContent = initials;
-  if (pn) pn.textContent = ud.fullName  || 'User';
-  if (pa) pa.textContent = ud.accountId || '';
-  if (ge) ge.style.display = 'none';
-  if (ae) ae.style.display = 'flex';
-  if (typeof smartsupp === 'function') {
-    smartsupp('name',  ud.fullName || 'User');
-    smartsupp('email', ud.email    || '');
-  }
-}
+</script>
+<script>
+function toggleProfile(e){e.stopPropagation();var p=document.getElementById('profilePanel');if(p)p.style.display=p.style.display==='block'?'none':'block';}
+document.addEventListener('click',function(e){var p=document.getElementById('profilePanel');var b=document.getElementById('avatarBtn');if(!p||p.style.display!=='block')return;if(!p.contains(e.target)&&(!b||!b.contains(e.target)))p.style.display='none';});
+function doLogout(){auth.signOut().then(function(){window.location.href='login.html';});}
+function openKYC(){alert('KYC verification coming soon.');}
+function populateHeader(ud){var i=(ud.fullName||'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();var av=document.getElementById('headerAvatar');var pn=document.getElementById('panelName');var pa=document.getElementById('panelAccountId');var ge=document.getElementById('headerGuest');var ae=document.getElementById('headerAuth');if(av)av.textContent=i;if(pn)pn.textContent=ud.fullName||'User';if(pa)pa.textContent=ud.accountId||'';if(ge)ge.style.display='none';if(ae)ae.style.display='flex';if(typeof smartsupp==='function'){smartsupp('name',ud.fullName||'User');smartsupp('email',ud.email||'');}}
 </script>
 </body>
 </html>

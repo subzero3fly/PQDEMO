@@ -421,11 +421,6 @@ window.smartsupp||(function(d) {
 
 
 <script>
-function toggleProfile(e) {
-  e.stopPropagation();
-  var panel = document.getElementById('profilePanel');
-  if (panel) panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
-}
 document.addEventListener('click', function(e) {
   var panel = document.getElementById('profilePanel');
   var btn   = document.getElementById('avatarBtn');
@@ -434,29 +429,13 @@ document.addEventListener('click', function(e) {
     panel.style.display = 'none';
   }
 });
-function doLogout() {
-  auth.signOut().then(function() { window.location.href = 'login.html'; });
-}
-function openKYC() {
-  alert('KYC verification coming soon.');
-}
-function populateHeader(ud) {
-  var initials = (ud.fullName || 'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-  var av = document.getElementById('headerAvatar');
-  var pn = document.getElementById('panelName');
-  var pa = document.getElementById('panelAccountId');
-  var ge = document.getElementById('headerGuest');
-  var ae = document.getElementById('headerAuth');
-  if (av) av.textContent = initials;
-  if (pn) pn.textContent = ud.fullName  || 'User';
-  if (pa) pa.textContent = ud.accountId || '';
-  if (ge) ge.style.display = 'none';
-  if (ae) ae.style.display = 'flex';
-  if (typeof smartsupp === 'function') {
-    smartsupp('name',  ud.fullName || 'User');
-    smartsupp('email', ud.email    || '');
-  }
-}
+</script>
+<script>
+function toggleProfile(e){e.stopPropagation();var p=document.getElementById('profilePanel');if(p)p.style.display=p.style.display==='block'?'none':'block';}
+document.addEventListener('click',function(e){var p=document.getElementById('profilePanel');var b=document.getElementById('avatarBtn');if(!p||p.style.display!=='block')return;if(!p.contains(e.target)&&(!b||!b.contains(e.target)))p.style.display='none';});
+function doLogout(){auth.signOut().then(function(){window.location.href='login.html';});}
+function openKYC(){alert('KYC verification coming soon.');}
+function populateHeader(ud){var i=(ud.fullName||'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();var av=document.getElementById('headerAvatar');var pn=document.getElementById('panelName');var pa=document.getElementById('panelAccountId');var ge=document.getElementById('headerGuest');var ae=document.getElementById('headerAuth');if(av)av.textContent=i;if(pn)pn.textContent=ud.fullName||'User';if(pa)pa.textContent=ud.accountId||'';if(ge)ge.style.display='none';if(ae)ae.style.display='flex';if(typeof smartsupp==='function'){smartsupp('name',ud.fullName||'User');smartsupp('email',ud.email||'');}}
 </script>
 </body>
 </html>
