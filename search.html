@@ -216,9 +216,8 @@ auth.onAuthStateChanged(async function(user) {
 
     var ud = snap.data() || {};
     var bal = fmtBal(ud.balance);
-    var initials = (ud.fullName||'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-    if (typeof smartsupp === 'function') { smartsupp('name', ud.fullName||'User'); smartsupp('email', ud.email||''); }
-
+    populateHeader(ud);
+    
     // Header balance-pair .b-value spans
     var bvals = document.querySelectorAll('.balance-pair .b-value');
     bvals.forEach(function(el){ el.textContent = bal; });
