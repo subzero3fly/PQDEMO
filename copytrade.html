@@ -377,15 +377,9 @@ auth.onAuthStateChanged(async function(user) {
       snap = await db.collection('users').doc(user.uid).get();
     }
     userData = snap.data()||{};
+    if (typeof populateHeader === 'function') populateHeader(userData);
+    if (typeof populateMobileDrawer === 'function') populateMobileDrawer(userData);
     if (typeof smartsupp === 'function') { smartsupp('name', userData.fullName||'User'); smartsupp('email', userData.email||''); }
-    var initials=(userData.fullName||'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-    document.getElementById('headerAvatar').textContent    = initials;
-    document.getElementById('panelName').textContent       = userData.fullName||'User';
-    document.getElementById('panelAccountId').textContent  = userData.accountId||'';
-
-    document.getElementById('logoutBtn').addEventListener('click',function(e){
-      e.preventDefault(); auth.signOut().then(function(){ location.href='login.html'; });
-    });
 
     // Check if already following
     var cbSnap = await db.collection('copyBetting').doc(user.uid).get();
@@ -401,7 +395,14 @@ auth.onAuthStateChanged(async function(user) {
     document.getElementById('mainContent').style.display = 'block';
   } catch(e) {
     console.error('copytrade load error:', e);
-    location.href = 'login.html';
+    // Do not redirect on error — user may be legitimately signed in
+    // Show content with whatever loaded successfully
+    var loader = document.getElementById('loader');
+    var header = document.getElementById('siteHeader');
+    var main   = document.getElementById('mainContent');
+    if (loader) loader.style.display = 'none';
+    if (header) header.style.display = 'block';
+    if (main)   main.style.display   = 'block';
   }
 });
 </script>
@@ -438,7 +439,7 @@ document.addEventListener('click', function(e) {
 </script>
 <script>
 function doLogout(){auth.signOut().then(function(){window.location.href='login.html';});}
-function openKYC(){alert('KYC verification coming soon.');}
+function openKYC(){ window.location.href='kyc.html'; }
 function populateHeader(ud){var i=(ud.fullName||'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();var av=document.getElementById('headerAvatar');var pn=document.getElementById('panelName');var pa=document.getElementById('panelAccountId');var ge=document.getElementById('headerGuest');var ae=document.getElementById('headerAuth');if(av)av.textContent=i;if(pn)pn.textContent=ud.fullName||'User';if(pa)pa.textContent=ud.accountId||'';if(ge)ge.style.display='none';if(ae)ae.style.display='flex';if(typeof smartsupp==='function'){smartsupp('name',ud.fullName||'User');smartsupp('email',ud.email||'');}
   if(typeof populateMobileDrawer==='function')populateMobileDrawer(ud);}
 </script>
@@ -461,7 +462,7 @@ function populateHeader(ud){var i=(ud.fullName||'U').split(' ').map(function(w){
     <div id="mobileDrawerName" style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px;"></div>
     <div id="mobileDrawerAccountId" style="font-size:12px;color:var(--text-faint,#9498a4);font-family:monospace;margin-bottom:20px;word-break:break-all;"></div>
     <hr style="border:none;border-top:1px solid var(--border);margin:0 0 16px;">
-    <button onclick="openKYC()" style="width:100%;height:44px;border-radius:99px;background:var(--accent-soft,rgba(124,92,255,.14));color:var(--accent,#7c5cff);border:1px solid rgba(124,92,255,.25);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;">Verify Identity (KYC)</button>
+    <button id="mobileKycBtn" onclick="openKYC()" style="width:100%;height:44px;border-radius:99px;background:var(--accent-soft,rgba(124,92,255,.14));color:var(--accent,#7c5cff);border:1px solid rgba(124,92,255,.25);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;">Verify Identity (KYC)</button>
     <button onclick="doLogout()" style="width:100%;height:44px;border-radius:99px;background:rgba(242,73,107,.1);color:#f2496b;border:1px solid rgba(242,73,107,.2);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Sign Out</button>
   </div>
 </div>
@@ -501,10 +502,28 @@ function populateMobileDrawer(ud){
   var a=document.getElementById('mobileDrawerAuth');
   var n=document.getElementById('mobileDrawerName');
   var i=document.getElementById('mobileDrawerAccountId');
+  var kycBtn=document.getElementById('mobileKycBtn');
   if(g)g.style.display='none';
   if(a)a.style.display='block';
   if(n)n.textContent=ud.fullName||'User';
   if(i)i.textContent=ud.accountId||'';
+  if(kycBtn){
+    if(ud.kycStatus==='verified'){
+      kycBtn.textContent='Identity Verified ✓';
+      kycBtn.style.background='rgba(31,209,124,.12)';
+      kycBtn.style.color='#1fd17c';
+      kycBtn.style.borderColor='rgba(31,209,124,.3)';
+      kycBtn.onclick=null;
+      kycBtn.style.cursor='default';
+    }else{
+      kycBtn.textContent='Verify Identity (KYC)';
+      kycBtn.style.background='var(--accent-soft,rgba(124,92,255,.14))';
+      kycBtn.style.color='var(--accent,#7c5cff)';
+      kycBtn.style.borderColor='rgba(124,92,255,.25)';
+      kycBtn.onclick=openKYC;
+      kycBtn.style.cursor='pointer';
+    }
+  }
 }
 // Dedicated auth watcher for mobile drawer — runs independently of other page auth handlers
 auth.onAuthStateChanged(function(user){

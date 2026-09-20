@@ -154,6 +154,7 @@
     <button class="admin-tab"        data-tab="deposits"    onclick="switchTab(this)">Deposits</button>
     <button class="admin-tab"        data-tab="withdrawals" onclick="switchTab(this)">Withdrawals</button>
     <button class="admin-tab"        data-tab="wallets"     onclick="switchTab(this)">Wallets</button>
+    <button class="admin-tab"        data-tab="kyc"         onclick="switchTab(this)">KYC</button>
   </div>
 
   <div class="admin-wrap">
@@ -232,6 +233,28 @@
       </div>
     </div>
 
+    <!-- KYC -->
+    <div class="admin-panel" id="panel-kyc">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;gap:8px;">
+          <button onclick="filterKyc('all')"     id="kycf-all"      style="padding:6px 14px;border-radius:99px;border:1px solid var(--border);background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">All</button>
+          <button onclick="filterKyc('pending')"  id="kycf-pending"  style="padding:6px 14px;border-radius:99px;border:1px solid var(--border);background:none;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Pending</button>
+          <button onclick="filterKyc('verified')" id="kycf-verified" style="padding:6px 14px;border-radius:99px;border:1px solid var(--border);background:none;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Verified</button>
+          <button onclick="filterKyc('rejected')" id="kycf-rejected" style="padding:6px 14px;border-radius:99px;border:1px solid var(--border);background:none;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Rejected</button>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-dim);cursor:pointer;">
+          <span>Auto-verify</span>
+          <input type="checkbox" id="autoVerifyToggle" onchange="toggleAutoVerify(this.checked)" style="width:16px;height:16px;cursor:pointer;">
+        </label>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-tbl">
+          <thead><tr><th>User</th><th>ID Type</th><th>Submitted</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="kycBody"></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -290,6 +313,7 @@ function switchTab(btn) {
   if (tab === 'deposits')    loadDeposits();
   if (tab === 'withdrawals') loadWithdrawals();
   if (tab === 'wallets')     loadWallets();
+  if (tab === 'kyc')         loadKyc();
 }
 
 async function loadOverview() {
@@ -396,6 +420,128 @@ async function approveWd(id) {
 async function rejectWd(id) {
   await db.collection('withdrawals').doc(id).update({ status:'rejected', reviewedAt: firebase.firestore.FieldValue.serverTimestamp() });
   showToast('Withdrawal rejected.'); loadWithdrawals();
+}
+
+// ── KYC ─────────────────────────────────────────────────────────────────────
+var _kycAll       = [];
+var _kycFilter    = 'all';
+var _kycReviewUid = null;
+
+async function loadKyc() {
+  // Load auto-verify setting
+  try {
+    var settSnap = await db.collection('settings').doc('kyc').get();
+    document.getElementById('autoVerifyToggle').checked = !!(settSnap.exists && settSnap.data().autoVerify);
+  } catch(e) {}
+
+  var tbody = document.getElementById('kycBody');
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-dim);">Loading…</td></tr>';
+  try {
+    var snap = await db.collection('kyc').orderBy('submittedAt','desc').get();
+    _kycAll = snap.docs.map(function(d){ return Object.assign({uid:d.id},d.data()); });
+    renderKycTable();
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#f2496b;padding:16px;">Error loading KYC submissions.</td></tr>';
+  }
+}
+
+function filterKyc(f) {
+  _kycFilter = f;
+  document.querySelectorAll('[id^="kycf-"]').forEach(function(b){
+    b.style.background = 'none'; b.style.color = 'var(--text-dim)';
+  });
+  var active = document.getElementById('kycf-'+f);
+  if (active) { active.style.background = 'var(--accent)'; active.style.color = '#fff'; }
+  renderKycTable();
+}
+
+function renderKycTable() {
+  var rows = _kycFilter === 'all' ? _kycAll : _kycAll.filter(function(r){ return r.status === _kycFilter; });
+  var tbody = document.getElementById('kycBody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-dim);">No KYC submissions' + (_kycFilter!=='all'?' with status "'+_kycFilter+'"':'')+  '.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(function(r) {
+    var statusColors = {pending:'#f2b341',verified:'#1fd17c',rejected:'#f2496b'};
+    var statusBg     = {pending:'rgba(242,179,65,.12)',verified:'rgba(31,209,124,.12)',rejected:'rgba(242,73,107,.12)'};
+    var col          = statusColors[r.status]  || 'var(--text-dim)';
+    var bg           = statusBg[r.status]      || 'transparent';
+    var ts = r.submittedAt ? (r.submittedAt.toDate ? r.submittedAt.toDate() : new Date(r.submittedAt)) : null;
+    var dateStr = ts ? ts.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
+    var idLabel = {passport:'Passport','national-id':'National ID','drivers-license':'Driver's License'}[r.idType] || r.idType || '—';
+    return '<tr>'+
+      '<td style="font-family:monospace;font-size:12px;color:var(--text-dim);">'+r.uid.slice(0,14)+'…</td>'+
+      '<td>'+idLabel+'</td>'+
+      '<td style="font-size:12.5px;color:var(--text-dim);">'+dateStr+'</td>'+
+      '<td><span style="padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;background:'+bg+';color:'+col+';">'+r.status+'</span></td>'+
+      '<td style="display:flex;gap:6px;align-items:center;">'+
+        '<button onclick="openKycModal(''+r.uid+'')" style="height:30px;padding:0 10px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;">Review</button>'+
+        (r.status!=='verified' ? '<button onclick="quickKycStatus(''+r.uid+'','verified')" style="height:30px;padding:0 10px;border-radius:8px;border:none;background:rgba(31,209,124,.12);color:#1fd17c;font-size:12px;cursor:pointer;font-family:inherit;">✓</button>' : '')+
+        (r.status!=='rejected' ? '<button onclick="quickKycStatus(''+r.uid+'','rejected')" style="height:30px;padding:0 10px;border-radius:8px;border:none;background:rgba(242,73,107,.12);color:#f2496b;font-size:12px;cursor:pointer;font-family:inherit;">✗</button>' : '')+
+      '</td>'+
+    '</tr>';
+  }).join('');
+}
+
+async function quickKycStatus(uid, status) {
+  try {
+    var batch = db.batch();
+    batch.update(db.collection('kyc').doc(uid),   { status:status, reviewedAt:firebase.firestore.FieldValue.serverTimestamp(), reviewNote:'Quick action by admin' });
+    batch.update(db.collection('users').doc(uid), { kycStatus:status });
+    await batch.commit();
+    var row = _kycAll.find(function(r){ return r.uid===uid; });
+    if (row) row.status = status;
+    renderKycTable();
+    showToast(status==='verified'?'KYC approved.':'KYC rejected.');
+  } catch(e) { showToast('Action failed: '+e.message); }
+}
+
+function openKycModal(uid) {
+  var r = _kycAll.find(function(x){ return x.uid===uid; });
+  if (!r) return;
+  _kycReviewUid = uid;
+  document.getElementById('kycModalUser').textContent   = uid.slice(0,18)+'…';
+  document.getElementById('kycModalIdType').textContent = {passport:'Passport','national-id':'National ID','drivers-license':'Driver's License'}[r.idType]||r.idType||'—';
+  var statusColors = {pending:'#f2b341',verified:'#1fd17c',rejected:'#f2496b'};
+  document.getElementById('kycModalStatus').innerHTML = '<span style="font-weight:700;color:'+(statusColors[r.status]||'var(--text)')+';">'+r.status+'</span>';
+  document.getElementById('kycFrontImg').src  = r.frontImage||'';
+  document.getElementById('kycFrontLink').href= r.frontImage||'#';
+  document.getElementById('kycBackImg').src   = r.backImage||'';
+  document.getElementById('kycBackLink').href = r.backImage||'#';
+  document.getElementById('kycReviewNote').value = r.reviewNote||'';
+  document.getElementById('kycModalErr').style.display = 'none';
+  document.getElementById('kycModal').style.display = 'flex';
+}
+
+function closeKycModal() {
+  document.getElementById('kycModal').style.display = 'none';
+  _kycReviewUid = null;
+}
+
+async function reviewKyc(status) {
+  if (!_kycReviewUid) return;
+  var note = document.getElementById('kycReviewNote').value.trim();
+  var errEl= document.getElementById('kycModalErr');
+  errEl.style.display = 'none';
+  try {
+    var batch = db.batch();
+    batch.update(db.collection('kyc').doc(_kycReviewUid),   { status:status, reviewedAt:firebase.firestore.FieldValue.serverTimestamp(), reviewNote:note });
+    batch.update(db.collection('users').doc(_kycReviewUid), { kycStatus:status });
+    await batch.commit();
+    var row = _kycAll.find(function(r){ return r.uid===_kycReviewUid; });
+    if (row) { row.status=status; row.reviewNote=note; }
+    closeKycModal();
+    renderKycTable();
+    showToast(status==='verified'?'KYC approved.':'KYC rejected.');
+  } catch(e) { errEl.textContent='Error: '+e.message; errEl.style.display='block'; }
+}
+
+async function toggleAutoVerify(checked) {
+  try {
+    await db.collection('settings').doc('kyc').set({ autoVerify: checked }, { merge:true });
+    showToast('Auto-verify '+(checked?'enabled':'disabled')+'.');
+  } catch(e) { showToast('Failed to update setting.'); }
 }
 
 function doSignOut() { auth.signOut().then(function(){ location.href = 'login.html'; }); }
@@ -823,5 +969,45 @@ function openKYC() {
   alert('KYC verification coming soon.');
 }
 </script>
+
+<!-- KYC review modal -->
+<div class="modal-back" id="kycModal" style="display:none;">
+  <div class="modal-box" style="max-width:520px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="font-size:17px;font-weight:800;color:var(--text);margin:0;">KYC Review</h3>
+      <button onclick="closeKycModal()" style="background:none;border:none;cursor:pointer;color:var(--text-dim);">
+        <svg style="width:20px;height:20px;" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div style="margin-bottom:14px;">
+      <p style="font-size:13px;color:var(--text-dim);margin:0 0 4px;">User: <strong id="kycModalUser" style="color:var(--text);"></strong></p>
+      <p style="font-size:13px;color:var(--text-dim);margin:0 0 4px;">ID Type: <strong id="kycModalIdType" style="color:var(--text);"></strong></p>
+      <p style="font-size:13px;color:var(--text-dim);margin:0;">Status: <span id="kycModalStatus"></span></p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div>
+        <p style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin:0 0 6px;">Front</p>
+        <a id="kycFrontLink" href="#" target="_blank">
+          <img id="kycFrontImg" alt="Front" style="width:100%;border-radius:8px;border:1px solid var(--border);min-height:80px;object-fit:cover;"/>
+        </a>
+      </div>
+      <div>
+        <p style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin:0 0 6px;">Back</p>
+        <a id="kycBackLink" href="#" target="_blank">
+          <img id="kycBackImg" alt="Back" style="width:100%;border-radius:8px;border:1px solid var(--border);min-height:80px;object-fit:cover;"/>
+        </a>
+      </div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Review note (optional)</label>
+      <textarea id="kycReviewNote" rows="2" placeholder="Reason for rejection, or leave blank for approval…" style="width:100%;padding:10px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit;outline:none;resize:vertical;box-sizing:border-box;"></textarea>
+    </div>
+    <div id="kycModalErr" style="font-size:13px;color:#f2496b;display:none;margin-bottom:10px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="reviewKyc('rejected')" style="flex:1;height:44px;border-radius:99px;background:rgba(242,73,107,.1);color:#f2496b;border:1px solid rgba(242,73,107,.25);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">✗ Reject</button>
+      <button onclick="reviewKyc('verified')" style="flex:1;height:44px;border-radius:99px;background:rgba(31,209,124,.12);color:#1fd17c;border:1px solid rgba(31,209,124,.3);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">✓ Approve</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
