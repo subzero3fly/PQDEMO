@@ -668,15 +668,9 @@ auth.onAuthStateChanged(async function(user) {
     }
     userData = uSnap.data()||{};
     if (typeof smartsupp === 'function') { smartsupp('name', userData.fullName||'User'); smartsupp('email', userData.email||''); }
-    var initials=(userData.fullName||'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-    document.getElementById('headerAvatar').textContent   = initials;
-    document.getElementById('panelName').textContent      = userData.fullName||'User';
-    document.getElementById('panelAccountId').textContent = userData.accountId||'';
+    if (typeof populateHeader === 'function') populateHeader(userData);
+    if (typeof populateMobileDrawer === 'function') populateMobileDrawer(userData);
   } catch(e){ console.warn('User load error:',e); }
-
-  document.getElementById('logoutBtn').addEventListener('click',function(e){
-    e.preventDefault(); auth.signOut().then(function(){ location.href='login.html'; });
-  });
 
   // Show header
   document.getElementById('siteHeader').style.display='block';

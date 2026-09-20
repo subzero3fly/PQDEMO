@@ -365,7 +365,8 @@ auth.onAuthStateChanged(async function(user) {
     });
   } catch(e) {
     console.warn('Auth balance error:', e);
-    window.location.href = 'login.html';
+    var _l=document.getElementById('loader');var _h=document.getElementById('siteHeader');var _m=document.getElementById('mainContent');
+    if(_l)_l.style.display='none';if(_h)_h.style.display='block';if(_m)_m.style.display='block';
   }
 });
 </script>
@@ -937,7 +938,8 @@ auth.onAuthStateChanged(async function(user) {
 
   } catch(e) {
     console.error('Portfolio load error:',e);
-    window.location.href='login.html';
+    var _l=document.getElementById('loader');var _h=document.getElementById('siteHeader');var _m=document.getElementById('mainContent');
+    if(_l)_l.style.display='none';if(_h)_h.style.display='block';if(_m)_m.style.display='block';
   }
 });
 </script>
