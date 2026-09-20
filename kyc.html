@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>PredictIQ — Identity Verification</title>
   <link rel="stylesheet" href="style.css"/>
-  <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
   <style>
     .kyc-page { max-width: 600px; margin: 0 auto; padding: 24px 16px 80px; }
 
@@ -296,6 +295,7 @@
 
 </div>
 
+<script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -313,41 +313,61 @@ var CLOUDINARY_PRESET = 'nextrade';
 
 // ── Cloudinary widget ────────────────────────────────────────────────────────
 function createWidget(side) {
-  return cloudinary.createUploadWidget({
-    cloudName:    CLOUDINARY_NAME,
-    uploadPreset: CLOUDINARY_PRESET,
-    sources:      ['local'],
-    multiple:     false,
-    maxFileSize:  5242880,
-    clientAllowedFormats: ['jpg','jpeg','png','heic','heif','webp'],
-    cropping:     false,
-    showPoweredBy:false,
-    singleUploadAutoClose: false,
-    styles: {
-      palette: {
-        window:'#1a1a2e', windowBorder:'#3a3a5c',
-        tabIcon:'#7c5cff', link:'#7c5cff', action:'#7c5cff',
-        inProgress:'#7c5cff', complete:'#1fd17c',
-        textDark:'#ffffff', textLight:'#ffffff',
-        menuIcons:'#9498a4', sourceBg:'#12122a', error:'#f2496b'
+  if (typeof cloudinary === 'undefined') {
+    showKycErr('Upload widget is still loading. Please wait a moment and try again.');
+    return null;
+  }
+  return cloudinary.createUploadWidget(
+    {
+      cloudName:    CLOUDINARY_NAME,
+      uploadPreset: CLOUDINARY_PRESET,
+      sources:      ['local'],
+      multiple:     false,
+      maxFileSize:  5242880,
+      clientAllowedFormats: ['jpg','jpeg','png','heic','heif','webp'],
+      cropping:     false,
+      showSkipCropButton: false,
+      showPoweredBy: false,
+      inlineContainer:    null,
+      chunkSize:          null,
+      singleUploadAutoClose: false,
+      styles: {
+        palette: {
+          window:      '#1e1e2e',
+          windowBorder:'#3a3a5c',
+          tabIcon:     '#7c5cff',
+          link:        '#7c5cff',
+          action:      '#7c5cff',
+          inProgress:  '#7c5cff',
+          complete:    '#1fd17c',
+          textDark:    '#ffffff',
+          textLight:   '#ffffff',
+          menuIcons:   '#9498a4',
+          sourceBg:    '#12122a',
+          error:       '#f2496b'
+        }
+      }
+    },
+    function(error, result) {
+      if (error) {
+        showKycErr('Upload failed: ' + (error.message || 'Please try again.'));
+        return;
+      }
+      if (result && result.event === 'success') {
+        var info = result.info;
+        setUploadedSide(side, info.secure_url, info.original_filename + '.' + info.format);
       }
     }
-  }, function(error, result) {
-    if (error) { showKycErr('Upload failed: ' + (error.message || 'Please try again.')); return; }
-    if (result && result.event === 'success') {
-      var info = result.info;
-      setUploadedSide(side, info.secure_url, info.original_filename + '.' + info.format);
-    }
-  });
+  );
 }
 
 function openWidget(side) {
   if (side === 'front') {
     if (!widgetFront) widgetFront = createWidget('front');
-    widgetFront.open();
+    if (widgetFront) widgetFront.open();
   } else {
     if (!widgetBack) widgetBack = createWidget('back');
-    widgetBack.open();
+    if (widgetBack) widgetBack.open();
   }
 }
 
