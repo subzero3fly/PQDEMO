@@ -817,7 +817,34 @@ function populateHeader(ud){var i=(ud.fullName||'U').split(' ').map(function(w){
 function openDrawer(){var isMobile=window.innerWidth<769;document.getElementById('drawerOverlay').style.display='block';var d=document.getElementById(isMobile?'mobileDrawer':'desktopDrawer');d.style.display='block';requestAnimationFrame(function(){d.style.transform=isMobile?'translateX(0)':'translateX(0)';});}
 function closeDrawer(){var ov=document.getElementById('drawerOverlay');var m=document.getElementById('mobileDrawer');var d=document.getElementById('desktopDrawer');if(m)m.style.transform='translateX(100%)';if(d)d.style.transform='translateX(-100%)';setTimeout(function(){if(ov)ov.style.display='none';if(m)m.style.display='none';if(d)d.style.display='none';},260);}
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDrawer();});
-function populateMobileDrawer(ud){var g=document.getElementById('mobileDrawerGuest');var a=document.getElementById('mobileDrawerAuth');var n=document.getElementById('mobileDrawerName');var i=document.getElementById('mobileDrawerAccountId');if(g)g.style.display='none';if(a)a.style.display='block';if(n)n.textContent=ud.fullName||'User';if(i)i.textContent=ud.accountId||'';}
+function populateMobileDrawer(ud){
+  var g=document.getElementById('mobileDrawerGuest');
+  var a=document.getElementById('mobileDrawerAuth');
+  var n=document.getElementById('mobileDrawerName');
+  var i=document.getElementById('mobileDrawerAccountId');
+  if(g)g.style.display='none';
+  if(a)a.style.display='block';
+  if(n)n.textContent=ud.fullName||'User';
+  if(i)i.textContent=ud.accountId||'';
+}
+// Dedicated auth watcher for mobile drawer — runs independently of other page auth handlers
+auth.onAuthStateChanged(function(user){
+  var g=document.getElementById('mobileDrawerGuest');
+  var a=document.getElementById('mobileDrawerAuth');
+  if(!user){
+    if(g)g.style.display='block';
+    if(a)a.style.display='none';
+    return;
+  }
+  // User is signed in — fetch their Firestore doc and populate drawer
+  db.collection('users').doc(user.uid).get().then(function(snap){
+    var ud=snap.exists?snap.data():{fullName:user.displayName||user.email||'User',accountId:''};
+    populateMobileDrawer(ud);
+  }).catch(function(){
+    // Fallback: show name from Auth even if Firestore fails
+    populateMobileDrawer({fullName:user.displayName||user.email||'User',accountId:''});
+  });
+});
 </script>
 </body>
 </html>

@@ -68,7 +68,9 @@ body{
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   padding-bottom: calc(var(--tabbar-h) + 12px);
+  overflow-x: hidden;
 }
+html { overflow-x: hidden; }
 :focus-visible{ outline: 2px solid var(--accent-bright); outline-offset: 2px; border-radius: 6px; }
 
 .visually-hidden{
@@ -97,11 +99,12 @@ body{
   gap: 12px; height: var(--header-h);
   padding: 0 16px;
   max-width: var(--container); margin: 0 auto;
+  width: 100%; min-width: 0; box-sizing: border-box;
 }
 
 .brand{ display: flex; align-items: center; gap: 9px; }
 .brand-mark{ width: 30px; height: 30px; color: var(--accent); }
-.brand-name{
+.brand-name{ min-width: 0; 
   font-family: var(--font-display); font-weight: 700; font-size: 18px;
   letter-spacing: -.01em;
 }
@@ -141,7 +144,7 @@ body{
 .avatar-sm{ width: 28px; height: 28px; }
 
 /* Category nav -------------------------------------------------------- */
-.category-nav{
+.category-nav{ min-width: 0;
   display: flex; gap: 22px; overflow-x: auto; scrollbar-width: none;
   padding: 0 16px 12px; max-width: var(--container); margin: 0 auto;
 }
@@ -551,4 +554,20 @@ body{
 @media (max-width: 768px) {
   /* Desktop drawer never shows on mobile */
   #desktopDrawer { display: none !important; }
+}
+
+@media (max-width: 768px) {
+  /* Prevent any child from bleeding past viewport */
+  .site-header, .header-row, .page, .portfolio-summary,
+  .summary-card, .chart-panel, .tab-switch {
+    max-width: 100vw;
+    box-sizing: border-box;
+  }
+  /* Brand shrinks gracefully */
+  .brand { min-width: 0; flex-shrink: 1; overflow: hidden; }
+  .brand-name { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Category nav scrolls horizontally without pushing layout */
+  .category-nav { flex: 1; min-width: 0; }
+  /* Header row never overflows */
+  .header-row { gap: 8px; padding: 0 12px; }
 }
