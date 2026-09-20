@@ -405,10 +405,10 @@ html { overflow-x: hidden; }
 #t-open:checked ~ .tab-switch label[for="t-open"],
 #t-history:checked ~ .tab-switch label[for="t-history"]{ background: var(--surface); color: var(--text); }
 
-.list-toolbar{ display: flex; gap: 10px; padding: 14px 16px; max-width: var(--container); margin: 0 auto; }
-.list-toolbar .search-field{ height: 42px; }
-.sort-btn{ display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 14px; border-radius: var(--radius-sm);
-  background: var(--surface); border: 1px solid var(--border); font-size: 13.5px; font-weight: 600; color: var(--text-dim); white-space: nowrap; }
+.list-toolbar{ display: flex; gap: 10px; padding: 14px 16px; max-width: var(--container); margin: 0 auto; width: 100%; box-sizing: border-box; }
+.list-toolbar .search-field{ height: 42px; flex: 3; min-width: 0; }
+.sort-btn{ display: flex; align-items: center; gap: 6px; height: 42px; padding: 0 12px; border-radius: var(--radius-sm);
+  background: var(--surface); border: 1px solid var(--border); font-size: 13px; font-weight: 600; color: var(--text-dim); white-space: nowrap; flex: 2; min-width: 0; justify-content: center; }
 
 .tab-panels{ position: relative; min-height: 160px; }
 .tab-panel{ display: none; padding: 40px 16px 60px; text-align: center; }
