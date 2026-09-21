@@ -865,7 +865,9 @@ auth.onAuthStateChanged(async function(user) {
     loadOverview();
   } catch(e) {
     console.error('Admin auth failed:', e);
-    location.href = 'login.html';
+    // Do not redirect on transient errors — show the shell so admin can retry
+    document.getElementById('loader').style.display    = 'none';
+    document.getElementById('adminShell').style.display = 'block';
   }
 });
 </script>
