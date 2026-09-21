@@ -350,23 +350,11 @@ auth.onAuthStateChanged(async function(user) {
       }
     });
 
-    // Avatar initials
-    var av = document.querySelector('.profile-menu .avatar, #headerAvatar');
-    if (av) av.textContent = initials;
-
-    // Profile panel name and account ID
-    var pname = document.querySelector('#panelName');
-    var paddr = document.querySelector('#panelAccountId, .profile-panel .addr');
-    if (pname) pname.textContent = ud.fullName || 'User';
-    if (paddr) paddr.textContent = ud.accountId || '';
-
-    // Logout button
-    });
-    });
+    if (typeof populateHeader === 'function') populateHeader(ud);
+    if (typeof populateMobileDrawer === 'function') populateMobileDrawer(ud);
+    if (typeof populateDesktopDrawer === 'function') populateDesktopDrawer(ud);
   } catch(e) {
-    console.warn('Auth balance error:', e);
-    var _l=document.getElementById('loader');var _h=document.getElementById('siteHeader');var _m=document.getElementById('mainContent');
-    if(_l)_l.style.display='none';if(_h)_h.style.display='block';if(_m)_m.style.display='block';
+    console.warn('Auth error:', e);
   }
 });
 </script>

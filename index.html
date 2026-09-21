@@ -144,34 +144,6 @@ auth.onAuthStateChanged(async function(user) {
     authEl.style.display  = 'none';
   }
 });
-    var bal = '$' + (ud.balance||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-    bvals.forEach(function(el){ el.textContent = bal; });
-
-    // Tab bar portfolio link text node
-    document.querySelectorAll('.tab-bar a').forEach(function(a){
-      if (a.getAttribute('href') === 'portfolio.html') {
-        var nodes = a.childNodes;
-        for (var i = nodes.length-1; i >= 0; i--) {
-          if (nodes[i].nodeType === 3 && nodes[i].textContent.trim()) {
-            nodes[i].textContent = '\n    ' + bal + '\n  ';
-            break;
-          }
-        }
-      }
-    });
-
-    // Profile panel name and account ID
-    var pname = document.getElementById('panelName');
-    var paddr = document.getElementById('panelAccountId');
-    if (pname) pname.textContent = ud.fullName || 'User';
-    if (paddr) paddr.textContent = ud.accountId || '';
-
-  } catch(e) {
-    console.warn('Header auth error:', e);
-    guestEl.style.display = 'flex';
-    authEl.style.display  = 'none';
-  }
-});
 </script>
 
 

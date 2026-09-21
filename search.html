@@ -189,46 +189,12 @@ auth.onAuthStateChanged(async function(user) {
     }
 
     var ud = snap.data() || {};
-    var bal = fmtBal(ud.balance);
     populateHeader(ud);
-    
-    // Header balance-pair .b-value spans
-    var bvals = document.querySelectorAll('.balance-pair .b-value');
-    bvals.forEach(function(el){ el.textContent = bal; });
 
-    // Tab bar portfolio link — contains the $0.00 text node
-    document.querySelectorAll('.tab-bar a').forEach(function(a){
-      if (a.getAttribute('href') === 'portfolio.html') {
-        // Replace the text node (last child) with real balance
-        var nodes = a.childNodes;
-        for (var i = nodes.length-1; i >= 0; i--) {
-          if (nodes[i].nodeType === 3 && nodes[i].textContent.trim()) {
-            nodes[i].textContent = '
-    ' + bal + '
-  ';
-            break;
-          }
-        }
-      }
-    });
-
-    // Avatar initials
-    var av = document.querySelector('.profile-menu .avatar, #headerAvatar');
-    if (av) av.textContent = initials;
-
-    // Profile panel name and account ID
-    var pname = document.querySelector('#panelName');
-    var paddr = document.querySelector('#panelAccountId, .profile-panel .addr');
-    if (pname) pname.textContent = ud.fullName || 'User';
-    if (paddr) paddr.textContent = ud.accountId || '';
-
-    // Logout button
-    });
-    });
+    if (typeof populateMobileDrawer === 'function') populateMobileDrawer(ud);
+    if (typeof populateDesktopDrawer === 'function') populateDesktopDrawer(ud);
   } catch(e) {
-    console.warn('Auth balance error:', e);
-    var _l=document.getElementById("loader"),_h=document.getElementById("siteHeader"),_m=document.getElementById("mainContent");
-    if(_l)_l.style.display="none";if(_h)_h.style.display="block";if(_m)_m.style.display="block";
+    console.warn('Auth error:', e);
   }
 });
 </script>
