@@ -606,134 +606,71 @@ async function refreshPanels(positions) {
   if (hPanel) hPanel.innerHTML = await renderPositions(settled);
 }
 
-// ── Withdraw ───────────────────────────────────────────────────────────────
-function openWithdrawModal(e) {
-  if (e) e.preventDefault();
-  document.getElementById('wdAmount').value  = '';
-  document.getElementById('wdAddress').value = '';
-  document.getElementById('wdErr').style.display = 'none';
-  var m = document.getElementById('withdraw-modal');
-  m.style.display = 'flex';
-}
-function closeWithdrawModal() {
-  document.getElementById('withdraw-modal').style.display = 'none';
-}
-async function submitWithdraw() {
-  var amount  = parseFloat(document.getElementById('wdAmount').value);
-  var coin    = document.getElementById('wdCoin').value;
-  var address = document.getElementById('wdAddress').value.trim();
-  var errEl   = document.getElementById('wdErr');
-  errEl.style.display = 'none';
-  var balance = portUserData ? (portUserData.balance||0) : 0;
-  if (!amount||amount<10)   { errEl.textContent='Minimum withdrawal is $10.'; errEl.style.display='block'; return; }
-  if (amount>balance)       { errEl.textContent='Insufficient balance.'; errEl.style.display='block'; return; }
-  if (!address)             { errEl.textContent='Wallet address is required.'; errEl.style.display='block'; return; }
-  try {
-    await db.collection('withdrawals').add({
-      userId:portUser.uid,amount:amount,coin:coin,address:address,
-      status:'pending',createdAt:firebase.firestore.FieldValue.serverTimestamp()
-    });
-    await db.collection('transactions').add({
-      userId:portUser.uid,type:'withdrawal',amount:-amount,status:'pending',
-      createdAt:firebase.firestore.FieldValue.serverTimestamp()
-    });
-    closeWithdrawModal();
-    pToast('Withdrawal request submitted. Pending admin approval.');
-  } catch(err) { errEl.textContent='Submission failed. Please try again.'; errEl.style.display='block'; }
-}
+// ── Deposit & Withdraw (NexTrade approach) ────────────────────────────────
+// Wallets stored at wallets/addresses (single doc, coin keys)
+// All transactions written to 'transactions' collection (type: deposit/withdrawal)
+// KYC must be verified before submit
 
-// ── Deposit ────────────────────────────────────────────────────────────────
-function openCryptoForm(e, method, defaultCoin) {
-  e.preventDefault();
-  cfMethod = method;
-  document.getElementById('cryptoFormTitle').textContent = method;
-  document.getElementById('cfAmount').value = '';
-  document.getElementById('cfTxid').value   = '';
-  document.getElementById('cfCoin').value   = defaultCoin||'BTC';
-  document.getElementById('cfErr').style.display = 'none';
-  document.getElementById('crypto-form-modal').style.display = 'flex';
-}
-function closeCryptoForm() {
-  document.getElementById('crypto-form-modal').style.display = 'none';
-}
-function openCashForm(e, method) {
-  e.preventDefault();
-  pToast('Cash deposit via '+method+' is coming soon.', false);
-}
-async function submitCryptoDeposit() {
-  var amount = parseFloat(document.getElementById('cfAmount').value);
-  var coin   = document.getElementById('cfCoin').value;
-  var txid   = document.getElementById('cfTxid').value.trim();
-  var errEl  = document.getElementById('cfErr');
-  errEl.style.display = 'none';
-  if (!amount||amount<1) { errEl.textContent='Enter a valid amount.'; errEl.style.display='block'; return; }
-  if (!txid)             { errEl.textContent='Transaction hash is required.'; errEl.style.display='block'; return; }
-  try {
-    await db.collection('deposits').add({
-      userId:portUser.uid,amount:amount,coin:coin,txid:txid,method:cfMethod,
-      status:'pending',createdAt:firebase.firestore.FieldValue.serverTimestamp()
-    });
-    await db.collection('transactions').add({
-      userId:portUser.uid,type:'deposit',amount:amount,status:'pending',
-      createdAt:firebase.firestore.FieldValue.serverTimestamp()
-    });
-    closeCryptoForm();
-    // Close deposit modal too
-    location.hash = '_close';
-    pToast('Deposit submitted. Pending admin review.');
-  } catch(err) { errEl.textContent='Submission failed. Try again.'; errEl.style.display='block'; }
-}
-
-
-// ── Deposit: crypto addresses from Firestore wallets collection ────────────
-var walletAddresses = {};   // { BTC: '...', ETH: '...', ... }
-var selectedCoin    = 'BTC';
+var walletData   = {};   // loaded from wallets/addresses
+var selectedCoin = 'BTC';
+var kycApproved  = false;
 
 var COIN_META = {
-  BTC:  { label:'Bitcoin',  ticker:'BTC',  color:'#f7931a', icon:'<path d="M11.5 7H14a2.5 2.5 0 0 1 0 5H10m1.5-5V6m0 6v-1m0 1h3a2.5 2.5 0 0 1 0 5H10m1.5-4v-1m0 1V18m0-11V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'},
-  ETH:  { label:'Ethereum', ticker:'ETH',  color:'#627eea', icon:'<path d="M12 2L5 12.5 12 10l7 2.5L12 2zM5 12.5L12 22l7-9.5-7 2.5-7-2.5z" fill="currentColor" opacity=".6"/><path d="M12 2v8l7 2.5L12 2zM12 10v12l7-9.5L12 10z" fill="currentColor"/>'},
-  LTC:  { label:'Litecoin', ticker:'LTC',  color:'#bfbbbb', icon:'<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><text x="12" y="17" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">L</text>'},
-  BNB:  { label:'BNB',      ticker:'BNB',  color:'#f3ba2f', icon:'<path d="M12 2l2.4 2.4-5 5L12 12l2.6-2.6 2.4 2.4L12 17l-5-5 2.6-2.6L7.4 7 12 2zM5 12l2.4 2.4-2.4 2.4-2.4-2.4L5 12zm14 0l2.4 2.4-2.4 2.4-2.4-2.4L19 12zm-7 7l2.4 2.4-2.4 2.4-2.4-2.4L12 19z" fill="currentColor"/>'},
-  USDT: { label:'Tether',   ticker:'USDT', color:'#26a17b', icon:'<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M8 9h8M12 9v2m-3 0h6m-3 0v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'},
-  USDC: { label:'USDC',     ticker:'USDC', color:'#2775ca', icon:'<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M15 9.5a4 4 0 1 0 0 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'},
-  XRP:  { label:'XRP',      ticker:'XRP',  color:'#346aa9', icon:'<path d="M5 5l4.5 4.5M19 5l-4.5 4.5m-9 9L5 19l4.5-4.5m5 0L19 19l-4.5-4.5M9.5 9.5l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'}
+  BTC:  { label:'Bitcoin',  color:'#f7931a', icon:'<path d="M11.5 7H14a2.5 2.5 0 0 1 0 5H10m1.5-5V6m0 6v-1m0 1h3a2.5 2.5 0 0 1 0 5H10m1.5-4v-1m0 1V18m0-11V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>' },
+  ETH:  { label:'Ethereum', color:'#627eea', icon:'<path d="M12 2L5 12.5 12 10l7 2.5L12 2zM5 12.5L12 22l7-9.5-7 2.5-7-2.5z" fill="currentColor" opacity=".6"/><path d="M12 2v8l7 2.5L12 2zM12 10v12l7-9.5L12 10z" fill="currentColor"/>' },
+  LTC:  { label:'Litecoin', color:'#bfbbbb', icon:'<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><text x="12" y="17" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">L</text>' },
+  BNB:  { label:'BNB',      color:'#f3ba2f', icon:'<path d="M12 2l2.4 2.4-5 5L12 12l2.6-2.6 2.4 2.4L12 17l-5-5 2.6-2.6L7.4 7 12 2z" fill="currentColor"/>' },
+  USDT: { label:'Tether',   color:'#26a17b', icon:'<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M8 9h8M12 9v2m-3 0h6m-3 0v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>' },
+  USDC: { label:'USDC',     color:'#2775ca', icon:'<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M15 9.5a4 4 0 1 0 0 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>' },
+  XRP:  { label:'XRP',      color:'#346aa9', icon:'<path d="M5 5l4.5 4.5M19 5l-4.5 4.5m-9 9L5 19l4.5-4.5m5 0L19 19l-4.5-4.5M9.5 9.5l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>' }
 };
 
+// ── Load wallets from single doc (wallets/addresses) ───────────────────────
 async function loadWalletAddresses() {
-  if (Object.keys(walletAddresses).length) return;
   try {
-    var snap = await db.collection('wallets').get();
-    snap.forEach(function(d) {
-      var data = d.data();
-      var coin = (data.coin || d.id).toUpperCase();
-      if (data.address) walletAddresses[coin] = data.address;
-    });
+    var snap = await db.collection('wallets').doc('addresses').get();
+    if (snap.exists) {
+      var data = snap.data();
+      // data has keys like BTC, ETH etc each being the address string
+      Object.keys(data).forEach(function(coin) {
+        if (data[coin]) walletData[coin.toUpperCase()] = data[coin];
+      });
+    }
   } catch(e) { console.warn('Could not load wallet addresses:', e); }
 }
 
-function renderCoinCards() {
-  var grid  = document.getElementById('coinCardGrid');
-  var coins = Object.keys(walletAddresses).filter(function(c){ return !!walletAddresses[c]; });
-  if (!coins.length) coins = Object.keys(COIN_META); // show all even if empty
-  grid.innerHTML = coins.map(function(coin) {
-    var meta   = COIN_META[coin] || { label:coin, ticker:coin, color:'#888', icon:'<circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5"/>' };
-    var active = coin === selectedCoin;
-    return '<button onclick="selectCoinCard(\''+coin+'\')" style="'+
-      'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;'+
-      'padding:12px 6px;border-radius:12px;cursor:pointer;font-family:inherit;'+
-      'border:2px solid '+(active?meta.color:'var(--border)')+';'+
-      'background:'+(active?'rgba('+hexToRgb(meta.color)+',.08)':'var(--bg)')+';'+
-      'transition:all .15s;">'+
-      '<svg style="width:32px;height:32px;color:'+meta.color+';" viewBox="0 0 24 24" fill="none">'+meta.icon+'</svg>'+
-      '<span style="font-size:13px;font-weight:700;color:var(--text);">'+meta.label+'</span>'+
-      '<span style="font-size:11px;color:var(--text-dim);">'+meta.ticker+'</span>'+
-    '</button>';
-  }).join('');
+// ── KYC block message ───────────────────────────────────────────────────────
+function showKycBlock(container) {
+  var existing = document.getElementById('kycBlockMsg');
+  if (existing) { existing.style.display = 'block'; return; }
+  var msg = document.createElement('div');
+  msg.id = 'kycBlockMsg';
+  msg.style.cssText = 'background:rgba(242,73,107,.08);border:1px solid rgba(242,73,107,.25);border-radius:12px;padding:14px 16px;margin-bottom:14px;';
+  msg.innerHTML = '<div style="font-weight:700;color:#f2496b;margin-bottom:6px;">Identity Verification Required</div>'
+    + '<p style="font-size:13px;color:var(--text-dim);line-height:1.6;margin:0 0 10px;">You must complete and pass identity verification before making a deposit or withdrawal.</p>'
+    + '<a href="kyc.html" style="display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:99px;background:var(--accent,#7c5cff);color:#fff;font-size:13px;font-weight:700;text-decoration:none;">Verify Identity →</a>';
+  if (container) container.insertBefore(msg, container.firstChild);
 }
 
-function hexToRgb(hex) {
-  var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-  return r+','+g+','+b;
+// ── Coin card grid ──────────────────────────────────────────────────────────
+function renderCoinCards() {
+  var grid  = document.getElementById('coinCardGrid');
+  if (!grid) return;
+  var coins = Object.keys(walletData).filter(function(c){ return !!walletData[c]; });
+  if (!coins.length) coins = ['BTC','ETH','LTC','BNB','USDT'];
+  grid.innerHTML = coins.map(function(coin) {
+    var meta   = COIN_META[coin] || { label:coin, color:'#888', icon:'<circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5"/>' };
+    var active = coin === selectedCoin;
+    return '<button onclick="selectCoinCard(\''+coin+'\')" style="'
+      + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;'
+      + 'padding:12px 6px;border-radius:12px;cursor:pointer;font-family:inherit;'
+      + 'border:2px solid '+(active ? meta.color : 'var(--border)')+';'
+      + 'background:'+(active ? 'rgba(0,0,0,.06)' : 'var(--bg)')+';transition:all .15s;">'
+      + '<svg style="width:28px;height:28px;color:'+meta.color+';" viewBox="0 0 24 24" fill="none">'+meta.icon+'</svg>'
+      + '<span style="font-size:12px;font-weight:700;color:var(--text);">'+meta.label+'</span>'
+      + '<span style="font-size:10px;color:var(--text-dim);">'+coin+'</span>'
+      + '</button>';
+  }).join('');
 }
 
 function selectCoinCard(coin) {
@@ -742,82 +679,67 @@ function selectCoinCard(coin) {
   updateAddrDisplay();
 }
 
+// ── Address + QR display ────────────────────────────────────────────────────
 function updateAddrDisplay() {
-  var addr     = walletAddresses[selectedCoin] || '';
-  var meta     = COIN_META[selectedCoin] || { label:selectedCoin, ticker:selectedCoin };
-  var display  = document.getElementById('walletDisplay');
-  var noAddr   = document.getElementById('noAddrMsg');
-  var addrEl   = document.getElementById('addrDisplay');
-  var labelEl  = document.getElementById('walletDisplayLabel');
-
+  var addr    = walletData[selectedCoin] || '';
+  var meta    = COIN_META[selectedCoin] || { label: selectedCoin };
+  var display = document.getElementById('walletDisplay');
+  var noAddr  = document.getElementById('noAddrMsg');
+  var addrEl  = document.getElementById('addrDisplay');
+  var labelEl = document.getElementById('walletDisplayLabel');
   if (!addr) {
-    display.style.display = 'none';
-    noAddr.style.display  = 'block';
+    if (display) display.style.display = 'none';
+    if (noAddr)  noAddr.style.display  = 'block';
     return;
   }
-  noAddr.style.display    = 'none';
-  display.style.display   = 'block';
-  labelEl.textContent     = meta.label.toUpperCase() + ' ('+meta.ticker+') WALLET';
-  addrEl.textContent      = addr;
+  if (noAddr)  noAddr.style.display  = 'none';
+  if (display) display.style.display = 'block';
+  if (labelEl) labelEl.textContent   = meta.label.toUpperCase() + ' (' + selectedCoin + ') WALLET';
+  if (addrEl)  addrEl.textContent    = addr;
   drawQR(addr);
 }
 
-// ── Minimal QR code generator (no external lib needed) ─────────────────────
-// Uses a free QR API as data URL via canvas
 function drawQR(text) {
   var canvas = document.getElementById('qrCanvas');
   if (!canvas) return;
-  var ctx    = canvas.getContext('2d');
-  var size   = 180;
-  canvas.width = size; canvas.height = size;
-  // Draw placeholder while loading
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0, 0, size, size);
-  ctx.fillStyle = '#ccc';
-  ctx.font = '12px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('Generating QR…', size/2, size/2);
-  // Load QR via goqr.me free API
-  var img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = function() {
-    ctx.clearRect(0, 0, size, size);
-    ctx.drawImage(img, 0, 0, size, size);
-  };
-  img.onerror = function() {
-    ctx.clearRect(0, 0, size, size);
-    ctx.fillStyle = '#f8f8f8';
-    ctx.fillRect(0, 0, size, size);
-    ctx.fillStyle = '#999';
-    ctx.font = '11px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('QR unavailable', size/2, size/2);
-    ctx.fillText('Copy address above', size/2, size/2+16);
-  };
+  var ctx = canvas.getContext('2d');
+  var sz  = 180;
+  canvas.width = sz; canvas.height = sz;
+  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,sz,sz);
+  ctx.fillStyle = '#ccc'; ctx.font='12px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('Generating QR…', sz/2, sz/2);
+  var img = new Image(); img.crossOrigin = 'anonymous';
+  img.onload = function(){ ctx.clearRect(0,0,sz,sz); ctx.drawImage(img,0,0,sz,sz); };
+  img.onerror = function(){ ctx.clearRect(0,0,sz,sz); ctx.fillStyle='#f8f8f8'; ctx.fillRect(0,0,sz,sz); };
   img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(text);
 }
 
 function copyDepositAddr() {
-  var addr = walletAddresses[selectedCoin];
-  if (!addr) { pToast('No address set for '+selectedCoin, 'err'); return; }
-  navigator.clipboard.writeText(addr).then(function() {
+  var addr = walletData[selectedCoin];
+  if (!addr) { pToast('No address set for ' + selectedCoin, 'err'); return; }
+  navigator.clipboard.writeText(addr).then(function(){
     pToast('Address copied!', 'ok');
-  }).catch(function() {
-    prompt('Copy this address:', addr);
-  });
+  }).catch(function(){ prompt('Copy this address:', addr); });
 }
 
+// ── Open crypto address modal ───────────────────────────────────────────────
 async function showCryptoAddresses(e) {
   e.preventDefault();
-  await loadWalletAddresses();
-  var coins = Object.keys(walletAddresses).filter(function(c){ return !!walletAddresses[c]; });
-  if (!coins.length) {
-    pToast('No addresses configured yet. Contact support.', 'err'); return;
+  if (!kycApproved) {
+    var modal = document.querySelector('#deposit-modal .modal-box');
+    showKycBlock(modal);
+    return;
   }
+  await loadWalletAddresses();
+  var coins = Object.keys(walletData).filter(function(c){ return !!walletData[c]; });
+  if (!coins.length) { pToast('No addresses configured yet. Contact support.', 'err'); return; }
   selectedCoin = coins[0];
-  document.getElementById('txAmount').value = '';
-  document.getElementById('txHash').value   = '';
-  document.getElementById('txErr').style.display = 'none';
+  var txAmt = document.getElementById('txAmount');
+  var txH   = document.getElementById('txHash');
+  var txErr = document.getElementById('txErr');
+  if (txAmt) txAmt.value = '';
+  if (txH)   txH.value   = '';
+  if (txErr) txErr.style.display = 'none';
   renderCoinCards();
   updateAddrDisplay();
   document.getElementById('cryptoAddrModal').style.display = 'flex';
@@ -827,37 +749,48 @@ function closeCryptoAddr() {
   document.getElementById('cryptoAddrModal').style.display = 'none';
 }
 
+// ── Submit deposit (crypto) — writes to transactions only ──────────────────
 async function submitTxHash() {
   var amount = parseFloat(document.getElementById('txAmount').value);
-  var txid   = document.getElementById('txHash').value.trim();
+  var txid   = (document.getElementById('txHash').value || '').trim();
   var errEl  = document.getElementById('txErr');
   errEl.style.display = 'none';
-  if (!amount || amount < 10) { errEl.textContent='Minimum deposit is $10.'; errEl.style.display='block'; return; }
-  if (!portUser) { errEl.textContent='Not logged in.'; errEl.style.display='block'; return; }
+  if (!amount || amount < 10) { errEl.textContent = 'Minimum deposit is $10.'; errEl.style.display = 'block'; return; }
+  if (!portUser) { errEl.textContent = 'Not logged in.'; errEl.style.display = 'block'; return; }
+  var addr = walletData[selectedCoin] || '';
+  if (!addr) { errEl.textContent = 'Wallet address not available. Contact support.'; errEl.style.display = 'block'; return; }
+  var btn = document.querySelector('#cryptoAddrModal button[onclick="submitTxHash()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
   try {
-    await db.collection('deposits').add({
-      userId:portUser.uid, amount:amount, coin:selectedCoin,
-      txid:txid||'', status:'pending',
-      createdAt:firebase.firestore.FieldValue.serverTimestamp()
-    });
     await db.collection('transactions').add({
-      userId:portUser.uid, type:'deposit', amount:amount, status:'pending',
-      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      userId:        portUser.uid,
+      type:          'deposit',
+      amount:        amount,
+      method:        'crypto',
+      coin:          selectedCoin,
+      walletAddress: addr,
+      reference:     txid,
+      status:        'pending',
+      createdAt:     firebase.firestore.FieldValue.serverTimestamp()
     });
     closeCryptoAddr();
-    pToast('Payment submitted. Pending admin review.', 'ok');
+    location.hash = '_close';
+    pToast('Payment submitted! Your account will be updated after confirmation.', 'ok');
   } catch(err) {
-    errEl.textContent='Submission failed. Try again.';
-    errEl.style.display='block';
-    console.error('submitTxHash error:', err);
+    errEl.textContent = 'Submission failed: ' + err.message;
+    errEl.style.display = 'block';
   }
+  if (btn) { btn.disabled = false; btn.textContent = 'I Have Made This Payment'; }
 }
 
-function openBankChat
-
+// ── Bank transfer — opens Smartsupp ────────────────────────────────────────
 function openBankChat(e) {
   e.preventDefault();
-  // Close deposit modal first
+  if (!kycApproved) {
+    var modal = document.querySelector('#deposit-modal .modal-box');
+    showKycBlock(modal);
+    return;
+  }
   location.hash = '_close';
   setTimeout(function() {
     if (typeof smartsupp === 'function') {
@@ -867,6 +800,61 @@ function openBankChat(e) {
       pToast('Chat support is loading. Try again in a moment.', 'ok');
     }
   }, 200);
+}
+
+// ── Withdraw modal ──────────────────────────────────────────────────────────
+function openWithdrawModal(e) {
+  if (e) e.preventDefault();
+  var wdAmt  = document.getElementById('wdAmount');
+  var wdAddr = document.getElementById('wdAddress');
+  var wdErr  = document.getElementById('wdErr');
+  var wdAvl  = document.getElementById('wdAvail');
+  if (wdAmt)  wdAmt.value  = '';
+  if (wdAddr) wdAddr.value = '';
+  if (wdErr)  wdErr.style.display = 'none';
+  if (wdAvl)  wdAvl.textContent   = pFmt(portUserData ? (portUserData.balance||0) : 0);
+  document.getElementById('withdraw-modal').style.display = 'flex';
+}
+function closeWithdrawModal() {
+  document.getElementById('withdraw-modal').style.display = 'none';
+}
+
+// ── Submit withdrawal — writes to transactions only ────────────────────────
+async function submitWithdraw() {
+  if (!kycApproved) {
+    closeWithdrawModal();
+    pToast('Identity verification required before withdrawal. Go to KYC.', 'err');
+    return;
+  }
+  var amount  = parseFloat(document.getElementById('wdAmount').value);
+  var coin    = document.getElementById('wdCoin').value;
+  var address = document.getElementById('wdAddress').value.trim();
+  var errEl   = document.getElementById('wdErr');
+  errEl.style.display = 'none';
+  var balance = portUserData ? (portUserData.balance||0) : 0;
+  if (!amount || amount < 10)  { errEl.textContent = 'Minimum withdrawal is $10.';    errEl.style.display = 'block'; return; }
+  if (amount > balance)        { errEl.textContent = 'Insufficient balance.';          errEl.style.display = 'block'; return; }
+  if (!address)                { errEl.textContent = 'Wallet address is required.';   errEl.style.display = 'block'; return; }
+  var btn = document.querySelector('#withdraw-modal button[onclick="submitWithdraw()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
+  try {
+    await db.collection('transactions').add({
+      userId:  portUser.uid,
+      type:    'withdrawal',
+      amount:  amount,
+      method:  'crypto',
+      coin:    coin,
+      address: address,
+      status:  'pending',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    closeWithdrawModal();
+    pToast('Withdrawal request submitted. Our team will process it shortly.', 'ok');
+  } catch(err) {
+    errEl.textContent = 'Submission failed: ' + err.message;
+    errEl.style.display = 'block';
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'Submit Withdrawal'; }
 }
 
 // Close modals on overlay click
@@ -897,6 +885,11 @@ auth.onAuthStateChanged(async function(user) {
     }
     portUserData = snap.data()||{};
     if (typeof smartsupp === 'function') { smartsupp('name', portUserData.fullName||'User'); smartsupp('email', portUserData.email||''); }
+    // Load KYC status — blocks deposit/withdraw if not verified
+    try {
+      var kycSnap = await db.collection('kyc').doc(user.uid).get();
+      kycApproved = kycSnap.exists && kycSnap.data().status === 'verified';
+    } catch(ke) { kycApproved = false; }
 
     // Header
     var initials=(portUserData.fullName||'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();

@@ -362,7 +362,7 @@ async function submitBalAdj() {
 
 async function loadDeposits() {
   var [dSnap, uSnap] = await Promise.all([
-    db.collection('deposits').orderBy('createdAt','desc').get(),
+    db.collection('transactions').where('type','==','deposit').orderBy('createdAt','desc').get(),
     db.collection('users').get()
   ]);
   var umap = {}; uSnap.forEach(function(d){ umap[d.id] = d.data(); });
@@ -389,13 +389,13 @@ async function approveDeposit(id, uid, amount) {
   showToast('Deposit approved.'); loadDeposits();
 }
 async function rejectDeposit(id) {
-  await db.collection('deposits').doc(id).update({ status:'rejected', reviewedAt: firebase.firestore.FieldValue.serverTimestamp() });
+  await db.collection('transactions').doc(id).update({ status:'rejected', reviewedAt: firebase.firestore.FieldValue.serverTimestamp() });
   showToast('Deposit rejected.'); loadDeposits();
 }
 
 async function loadWithdrawals() {
   var [wSnap, uSnap] = await Promise.all([
-    db.collection('withdrawals').orderBy('createdAt','desc').get(),
+    db.collection('transactions').where('type','==','withdrawal').orderBy('createdAt','desc').get(),
     db.collection('users').get()
   ]);
   var umap = {}; uSnap.forEach(function(d){ umap[d.id] = d.data(); });
@@ -414,11 +414,11 @@ async function loadWithdrawals() {
 }
 
 async function approveWd(id) {
-  await db.collection('withdrawals').doc(id).update({ status:'approved', reviewedAt: firebase.firestore.FieldValue.serverTimestamp() });
+  await db.collection('transactions').doc(id).update({ status:'approved', reviewedAt: firebase.firestore.FieldValue.serverTimestamp() });
   showToast('Withdrawal approved.'); loadWithdrawals();
 }
 async function rejectWd(id) {
-  await db.collection('withdrawals').doc(id).update({ status:'rejected', reviewedAt: firebase.firestore.FieldValue.serverTimestamp() });
+  await db.collection('transactions').doc(id).update({ status:'rejected', reviewedAt: firebase.firestore.FieldValue.serverTimestamp() });
   showToast('Withdrawal rejected.'); loadWithdrawals();
 }
 
@@ -558,9 +558,11 @@ var WALLET_COINS = [
 ];
 
 async function loadWallets() {
-  var snap = await db.collection('wallets').get();
   var existing = {};
-  snap.forEach(function(d){ existing[d.id] = d.data().address || ''; });
+  try {
+    var snap = await db.collection('wallets').doc('addresses').get();
+    if (snap.exists) existing = snap.data();
+  } catch(e) {}
 
   var container = document.getElementById('walletFields');
   container.innerHTML = WALLET_COINS.map(function(c) {
@@ -577,18 +579,12 @@ async function saveAllWallets() {
   var msg = document.getElementById('walletSaveMsg');
   msg.style.display = 'none';
   try {
-    var batch = db.batch();
+    var data = { updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
     WALLET_COINS.forEach(function(c) {
       var input = document.getElementById('wallet_'+c.id);
-      var addr  = input ? input.value.trim() : '';
-      batch.set(db.collection('wallets').doc(c.id), {
-        coin:    c.id,
-        label:   c.label,
-        address: addr,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      data[c.id] = input ? input.value.trim() : '';
     });
-    await batch.commit();
+    await db.collection('wallets').doc('addresses').set(data);
     msg.textContent       = 'All wallet addresses saved successfully.';
     msg.style.background  = 'var(--yes-bg,rgba(31,209,124,.13))';
     msg.style.color       = 'var(--yes,#1fd17c)';
