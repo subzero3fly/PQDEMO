@@ -17,6 +17,14 @@
     .form-input { height:44px; padding:0 14px; border-radius:var(--radius-sm); background:var(--bg); border:1.5px solid var(--border); color:var(--text); font-size:15px; font-family:inherit; transition:border-color .15s; outline:none; }
     .form-input:focus { border-color:var(--accent); }
     .form-input::placeholder { color:var(--text-dim); opacity:.5; }
+    .pass-field { position:relative; }
+    .pass-field .form-input { padding-right:44px; }
+    .pass-toggle { position:absolute; top:0; right:0; width:44px; height:44px; display:flex; align-items:center; justify-content:center; background:none; border:none; cursor:pointer; color:var(--text-dim); padding:0; }
+    .pass-toggle:hover { color:var(--text); }
+    .pass-toggle svg { width:19px; height:19px; }
+    .pass-toggle .eye-off { display:none; }
+    .pass-toggle.is-visible .eye-on { display:none; }
+    .pass-toggle.is-visible .eye-off { display:block; }
     .form-error { font-size:12.5px; color:#f2496b; margin-top:2px; display:none; }
     .form-error.show { display:block; }
     .btn-submit { width:100%; height:46px; border-radius:var(--radius-pill); background:var(--accent); color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer; margin-top:8px; font-family:inherit; transition:opacity .15s; }
@@ -48,7 +56,13 @@
   </div>
   <div class="form-group">
     <label class="form-label" for="loginPassword">Password</label>
-    <input class="form-input" id="loginPassword" type="password" placeholder="Enter your password" autocomplete="current-password"/>
+    <div class="pass-field">
+      <input class="form-input" id="loginPassword" type="password" placeholder="Enter your password" autocomplete="current-password"/>
+      <button type="button" class="pass-toggle" id="loginPassToggle" onclick="togglePass('loginPassword','loginPassToggle')" aria-label="Show password" tabindex="-1">
+        <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a18.6 18.6 0 0 1 4.22-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+      </button>
+    </div>
   </div>
 
   <button class="btn-submit" id="loginBtn" onclick="doLogin()">Sign In</button>
@@ -60,6 +74,15 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script>
+function togglePass(inputId, btnId) {
+  var input = document.getElementById(inputId);
+  var btn   = document.getElementById(btnId);
+  var show  = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  btn.classList.toggle('is-visible', show);
+  btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+}
+
 // If already signed in, redirect
 auth.onAuthStateChanged(async function(user) {
   if (!user) return;
