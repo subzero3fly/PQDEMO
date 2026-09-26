@@ -21,7 +21,7 @@
   var MIN_PROB      = 2;
   var MAX_PROB      = 98;
 
-  var _markets      = [];     // [{id, currentProbability, resolutionBias, targetProbability, resolutionDate}]
+  var _markets      = [];     // [{id, currentProbability, resolutionBias, targetProbability, resolutionDays, createdAt, resolutionDate}]
   var _tickTimer    = null;
   var _snapTimer    = null;
   var _started      = false;
@@ -35,10 +35,22 @@
   }
 
   // ── Urgency — how strongly to drift toward target as deadline nears ───────
-  function urgency(resolutionDate) {
-    if (!resolutionDate) return 0.02;
-    var end   = resolutionDate.toDate ? resolutionDate.toDate() : new Date(resolutionDate);
-    var total = end - new Date();
+  // Anchored to (market creation date + admin-set resolution days), a single
+  // shared schedule — NOT the per-user "Closes" date shown on market-detail.html,
+  // since currentProbability is written once to marketLive and seen by everyone.
+  function effectiveEndDate(m) {
+    if (typeof m.resolutionDays === 'number' && m.createdAt) {
+      var created = m.createdAt.toDate ? m.createdAt.toDate() : new Date(m.createdAt);
+      return new Date(created.getTime() + m.resolutionDays * 86400000);
+    }
+    if (m.resolutionDate) {
+      return m.resolutionDate.toDate ? m.resolutionDate.toDate() : new Date(m.resolutionDate);
+    }
+    return null;
+  }
+  function urgency(endDate) {
+    if (!endDate) return 0.02;
+    var total = endDate - new Date();
     if (total <= 0) return 0.5;                          // past due — strong pull
     var days  = total / 86400000;
     if (days > 30)  return 0.005;                        // far away — very gentle
@@ -50,7 +62,7 @@
 
   // ── Single market tick ────────────────────────────────────────────────────
   function tickMarket(m, seedOffset) {
-    var u        = urgency(m.resolutionDate);
+    var u        = urgency(effectiveEndDate(m));
     var target   = m.targetProbability;
     var current  = m.currentProbability;
 
@@ -174,7 +186,9 @@
           currentProbability: currentProb,
           resolutionBias:     bias,
           targetProbability:  target,
-          resolutionDate:     data.resolutionDate || null
+          resolutionDays:     typeof data.resolutionDays === 'number' ? data.resolutionDays : null,
+          createdAt:          data.createdAt || null,
+          resolutionDate:     data.resolutionDate || null  // legacy markets only
         };
       }).filter(function (m) {
         // Skip markets that have no secret (no bias set = admin hasn't configured it)

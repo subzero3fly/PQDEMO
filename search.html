@@ -193,6 +193,7 @@ auth.onAuthStateChanged(async function(user) {
     }
 
     var ud = snap.data() || {};
+    currentUserCreatedAt = ud.createdAt || null;
     populateHeader(ud);
 
     if (typeof populateMobileDrawer === 'function') populateMobileDrawer(ud);
@@ -209,6 +210,7 @@ auth.onAuthStateChanged(async function(user) {
 var allMarkets  = [];
 var currentSort = 'new';
 var searchTimer = null;
+var currentUserCreatedAt = null; // used to compute each market's personalized "Closes" date for the Ending Soon sort
 
 var CAT_ICONS_PATHS = {
   politics:    '<path d="M3 21h18M5 21V7l7-5 7 5v14" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
@@ -272,11 +274,16 @@ function sortMarkets(list, sort) {
   } else if (sort === 'popular' || sort === 'liquid' || sort === 'trending') {
     copy.sort(function(a,b){ return (b.totalVolume||0)-(a.totalVolume||0); });
   } else if (sort === 'ending') {
-    copy.sort(function(a,b){
-      var at = (a.resolutionDate&&a.resolutionDate.seconds)||Infinity;
-      var bt = (b.resolutionDate&&b.resolutionDate.seconds)||Infinity;
-      return at-bt;
-    });
+    // Personalized: each market's effective end = current user's signup date + resolutionDays.
+    // Legacy markets (no resolutionDays) fall back to their fixed resolutionDate.
+    function endTime(m) {
+      if (typeof m.resolutionDays === 'number' && currentUserCreatedAt) {
+        var created = currentUserCreatedAt.toDate ? currentUserCreatedAt.toDate() : new Date(currentUserCreatedAt);
+        return created.getTime() + m.resolutionDays * 86400000;
+      }
+      return (m.resolutionDate && m.resolutionDate.seconds) ? m.resolutionDate.seconds * 1000 : Infinity;
+    }
+    copy.sort(function(a,b){ return endTime(a) - endTime(b); });
   } else if (sort === 'competitive') {
     copy.sort(function(a,b){
       return Math.abs(50-(a.currentProbability||50)) - Math.abs(50-(b.currentProbability||50));

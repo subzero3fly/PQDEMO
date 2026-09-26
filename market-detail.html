@@ -392,6 +392,17 @@ function buildCountdown(resDate) {
   return { text:text, urgent:h<6, ended:false };
 }
 
+// Each user's "Closes" date is personal: their own signup date + the market's
+// resolution period (in days), not a fixed calendar date. Legacy markets that
+// only have the old fixed resolutionDate fall back to that for everyone.
+function getUserResolveDate(m) {
+  if (typeof m.resolutionDays === 'number' && userData && userData.createdAt) {
+    var created = userData.createdAt.toDate ? userData.createdAt.toDate() : new Date(userData.createdAt);
+    return new Date(created.getTime() + m.resolutionDays * 86400000);
+  }
+  return m.resolutionDate || null;
+}
+
 function startCountdown(resDate) {
   function tick() {
     var cd = buildCountdown(resDate);
@@ -521,7 +532,7 @@ function renderMarket(m) {
   }
 
   // Countdown
-  startCountdown(m.resolutionDate);
+  startCountdown(getUserResolveDate(m));
   startProbRefresh();
 }
 

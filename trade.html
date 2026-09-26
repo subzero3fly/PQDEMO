@@ -121,6 +121,19 @@
     .modal-actions button { flex:1; height:44px; border-radius:var(--radius-pill); font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; border:none; }
     .modal-cancel  { background:var(--surface-2); color:var(--text); border:1px solid var(--border) !important; }
     .modal-confirm { background:var(--no); color:#fff; }
+
+    /* ── Toast ── */
+    .toast-msg {
+      position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(16px);
+      background:var(--surface); border:1px solid var(--border); border-radius:16px;
+      padding:9px 20px; font-size:14px; font-weight:600; color:var(--text);
+      z-index:500; opacity:0; transition:opacity .25s, transform .25s;
+      max-width:calc(100vw - 32px); width:max-content; box-sizing:border-box; text-align:center;
+      pointer-events:none;
+    }
+    .toast-msg.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    .toast-msg.ok  { border-color:var(--yes); color:var(--yes); }
+    .toast-msg.err { border-color:var(--no);  color:var(--no); }
   </style>
 </head>
 <body>
