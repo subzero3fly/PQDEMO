@@ -1,0 +1,131 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // ── Admins ───────────────────────────────────────────────────────────────
+    match /admins/{uid} {
+      allow read:  if isSignedIn();
+      allow write: if false;
+    }
+
+    // ── Users ─────────────────────────────────────────────────────────────────
+    // CRITICAL: create must be allowed for any signed-in user writing their OWN
+    // doc. Firebase Auth creates the user first, then the client writes the doc.
+    // The user IS signed in at that point (auth.currentUser exists), so isOwner
+    // works correctly. No cross-collection queries are needed because account IDs
+    // are generated locally.
+    match /users/{uid} {
+      allow read:   if isOwner(uid) || isAdmin();
+      allow create: if isSignedIn() && isOwner(uid);
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Markets ───────────────────────────────────────────────────────────────
+    match /markets/{marketId} {
+      allow read:   if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() || isSignedIn();
+      allow delete: if isAdmin();
+
+      match /probabilityHistory/{snapId} {
+        allow read:   if true;
+        allow create: if isSignedIn();
+        allow update: if false;
+        allow delete: if isAdmin();
+      }
+    }
+
+    // ── Market live state ─────────────────────────────────────────────────────
+    match /marketLive/{marketId} {
+      allow read:  if true;
+      allow write: if isSignedIn();
+    }
+
+    // ── Market secrets ────────────────────────────────────────────────────────
+    match /marketSecrets/{marketId} {
+      allow read:  if isSignedIn();
+      allow write: if isAdmin() || isSignedIn();
+    }
+
+    // ── Positions ─────────────────────────────────────────────────────────────
+    match /positions/{posId} {
+      allow read:   if isSignedIn() &&
+                       (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() &&
+                       request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() &&
+                       (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // ── Copy positions ────────────────────────────────────────────────────────
+    match /copyPositions/{posId} {
+      allow read:   if isSignedIn() &&
+                       (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() &&
+                       request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() &&
+                       (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // ── Copy betting state ────────────────────────────────────────────────────
+    match /copyBetting/{uid} {
+      allow read:   if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Transactions ──────────────────────────────────────────────────────────
+    match /transactions/{txId} {
+      allow read:   if isSignedIn() &&
+                       (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() &&
+                       (request.resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // ── Transactions (deposits, withdrawals, stakes, payouts) ───────────────
+    // Users can create their own transactions and read their own.
+    // Admin can read all and update status (approve/reject).
+    match /transactions/{txId} {
+      allow read:   if isSignedIn() &&
+                       (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() &&
+                       request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Wallets ───────────────────────────────────────────────────────────────
+    // Single doc: wallets/addresses — public read so deposit page can show addresses
+    match /wallets/{doc} {
+      allow read:  if true;
+      allow write: if isAdmin();
+    }
+
+    // ── Settings ─────────────────────────────────────────────────────────────
+    match /settings/{doc} {
+      allow read:  if true;
+      allow write: if doc == 'marketSync' ? isSignedIn() : isAdmin();
+    }
+
+    // ── KYC ──────────────────────────────────────────────────────────────────
+    match /kyc/{uid} {
+      allow read:   if isOwner(uid) || isAdmin();
+      allow create: if isSignedIn() && isOwner(uid);
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+  }
+}
