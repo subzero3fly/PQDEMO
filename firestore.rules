@@ -49,6 +49,19 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
+    // ── Trading — live price caches (Forex/Commodities) ─────────────────────
+    // Single docs: forexPrices/latest, commodityPrices/latest.
+    // One client fetches from the external API and writes; everyone else reads.
+    // Same shared-cache pattern as marketLive above.
+    match /forexPrices/{doc} {
+      allow read:  if true;
+      allow write: if isSignedIn();
+    }
+    match /commodityPrices/{doc} {
+      allow read:  if true;
+      allow write: if isSignedIn();
+    }
+
     // ── Market secrets ────────────────────────────────────────────────────────
     match /marketSecrets/{marketId} {
       allow read:  if isSignedIn();
@@ -68,6 +81,19 @@ service cloud.firestore {
 
     // ── Copy positions ────────────────────────────────────────────────────────
     match /copyPositions/{posId} {
+      allow read:   if isSignedIn() &&
+                       (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() &&
+                       request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() &&
+                       (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // ── Trades (Forex/Commodities/Crypto) ───────────────────────────────────
+    // Same ownership pattern as positions — draws from and returns to the
+    // single shared users/{uid}.balance field, not a separate trading balance.
+    match /trades/{tradeId} {
       allow read:   if isSignedIn() &&
                        (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isSignedIn() &&
