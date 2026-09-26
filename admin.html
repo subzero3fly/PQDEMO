@@ -469,16 +469,16 @@ function renderKycTable() {
     var bg           = statusBg[r.status]      || 'transparent';
     var ts = r.submittedAt ? (r.submittedAt.toDate ? r.submittedAt.toDate() : new Date(r.submittedAt)) : null;
     var dateStr = ts ? ts.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
-    var idLabel = {passport:'Passport','national-id':'National ID','drivers-license':'Driver's License'}[r.idType] || r.idType || '—';
+    var idLabel = {passport:'Passport','national-id':'National ID','drivers-license':"Driver's License"}[r.idType] || r.idType || '—';
     return '<tr>'+
       '<td style="font-family:monospace;font-size:12px;color:var(--text-dim);">'+r.uid.slice(0,14)+'…</td>'+
       '<td>'+idLabel+'</td>'+
       '<td style="font-size:12.5px;color:var(--text-dim);">'+dateStr+'</td>'+
       '<td><span style="padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;background:'+bg+';color:'+col+';">'+r.status+'</span></td>'+
       '<td style="display:flex;gap:6px;align-items:center;">'+
-        '<button onclick="openKycModal(''+r.uid+'')" style="height:30px;padding:0 10px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;">Review</button>'+
-        (r.status!=='verified' ? '<button onclick="quickKycStatus(''+r.uid+'','verified')" style="height:30px;padding:0 10px;border-radius:8px;border:none;background:rgba(31,209,124,.12);color:#1fd17c;font-size:12px;cursor:pointer;font-family:inherit;">✓</button>' : '')+
-        (r.status!=='rejected' ? '<button onclick="quickKycStatus(''+r.uid+'','rejected')" style="height:30px;padding:0 10px;border-radius:8px;border:none;background:rgba(242,73,107,.12);color:#f2496b;font-size:12px;cursor:pointer;font-family:inherit;">✗</button>' : '')+
+        '<button onclick="openKycModal(\''+r.uid+'\')" style="height:30px;padding:0 10px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;">Review</button>'+
+        (r.status!=='verified' ? '<button onclick="quickKycStatus(\''+r.uid+'\',\'verified\')" style="height:30px;padding:0 10px;border-radius:8px;border:none;background:rgba(31,209,124,.12);color:#1fd17c;font-size:12px;cursor:pointer;font-family:inherit;">✓</button>' : '')+
+        (r.status!=='rejected' ? '<button onclick="quickKycStatus(\''+r.uid+'\',\'rejected\')" style="height:30px;padding:0 10px;border-radius:8px;border:none;background:rgba(242,73,107,.12);color:#f2496b;font-size:12px;cursor:pointer;font-family:inherit;">✗</button>' : '')+
       '</td>'+
     '</tr>';
   }).join('');
@@ -502,7 +502,7 @@ function openKycModal(uid) {
   if (!r) return;
   _kycReviewUid = uid;
   document.getElementById('kycModalUser').textContent   = uid.slice(0,18)+'…';
-  document.getElementById('kycModalIdType').textContent = {passport:'Passport','national-id':'National ID','drivers-license':'Driver's License'}[r.idType]||r.idType||'—';
+  document.getElementById('kycModalIdType').textContent = {passport:'Passport','national-id':'National ID','drivers-license':"Driver's License"}[r.idType]||r.idType||'—';
   var statusColors = {pending:'#f2b341',verified:'#1fd17c',rejected:'#f2496b'};
   document.getElementById('kycModalStatus').innerHTML = '<span style="font-weight:700;color:'+(statusColors[r.status]||'var(--text)')+';">'+r.status+'</span>';
   document.getElementById('kycFrontImg').src  = r.frontImage||'';
