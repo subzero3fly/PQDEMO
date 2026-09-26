@@ -310,6 +310,7 @@ function fmtBal(n) {
 
 auth.onAuthStateChanged(async function(user) {
   if (!user) { window.location.href = 'login.html'; return; }
+  portUser = user;
 
   try {
     var snap = await db.collection('users').doc(user.uid).get();
@@ -326,35 +327,42 @@ auth.onAuthStateChanged(async function(user) {
       snap = await db.collection('users').doc(user.uid).get();
     }
 
-    var ud = snap.data() || {};
-    var bal = fmtBal(ud.balance);
-    var initials = (ud.fullName||'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    portUserData = snap.data() || {};
 
-    // Header balance-pair .b-value spans
-    var bvals = document.querySelectorAll('.balance-pair .b-value');
-    bvals.forEach(function(el){ el.textContent = bal; });
+    // Load KYC status
+    try {
+      var kycSnap = await db.collection('kyc').doc(user.uid).get();
+      kycApproved = kycSnap.exists && kycSnap.data().status === 'verified';
+    } catch(ke) { kycApproved = false; }
 
-    // Tab bar portfolio link — contains the $0.00 text node
-    document.querySelectorAll('.tab-bar a').forEach(function(a){
-      if (a.getAttribute('href') === 'portfolio.html') {
-        // Replace the text node (last child) with real balance
-        var nodes = a.childNodes;
-        for (var i = nodes.length-1; i >= 0; i--) {
-          if (nodes[i].nodeType === 3 && nodes[i].textContent.trim()) {
-            nodes[i].textContent = '
-    ' + bal + '
-  ';
-            break;
-          }
-        }
-      }
+    // Populate header and drawers
+    if (typeof populateHeader === 'function') populateHeader(portUserData);
+    if (typeof populateMobileDrawer === 'function') populateMobileDrawer(portUserData);
+    if (typeof populateDesktopDrawer === 'function') populateDesktopDrawer(portUserData);
+
+    // Load positions and populate portfolio
+    var [manSnap, cpSnap] = await Promise.all([
+      db.collection('positions').where('userId','==',user.uid).get(),
+      db.collection('copyPositions').where('userId','==',user.uid).get()
+    ]);
+
+    allPositions = [
+      ...manSnap.docs.map(function(d){ return Object.assign({id:d.id,_type:'manual'},d.data()); }),
+      ...cpSnap.docs.map(function(d) { return Object.assign({id:d.id,_type:'copy'},d.data()); })
+    ].sort(function(a,b){
+      return ((b.createdAt&&b.createdAt.seconds)||0)-((a.createdAt&&a.createdAt.seconds)||0);
     });
 
-    if (typeof populateHeader === 'function') populateHeader(ud);
-    if (typeof populateMobileDrawer === 'function') populateMobileDrawer(ud);
-    if (typeof populateDesktopDrawer === 'function') populateDesktopDrawer(ud);
+    populateSummary(portUserData, allPositions);
+    buildPnlChart(allPositions, 'r-1d');
+    await refreshPanels(allPositions);
+
+    // Update wdAvail with real balance
+    var wdAvl = document.getElementById('wdAvail');
+    if (wdAvl) wdAvl.textContent = pFmt(portUserData.balance||0);
+
   } catch(e) {
-    console.warn('Auth error:', e);
+    console.warn('Portfolio auth error:', e);
   }
 });
 </script>
@@ -866,66 +874,7 @@ document.getElementById('crypto-form-modal').addEventListener('click', function(
 });
 
 // ── Main auth + load ───────────────────────────────────────────────────────
-auth.onAuthStateChanged(async function(user) {
-  if (!user) { window.location.href='login.html'; return; }
-  portUser = user;
-    predictionEngine.start();
-
-  try {
-    var snap = await db.collection('users').doc(user.uid).get();
-    if (!snap.exists) {
-      var chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',rand='';
-      for(var i=0;i<8;i++) rand+=chars[Math.floor(Math.random()*chars.length)];
-      await db.collection('users').doc(user.uid).set({
-        fullName:user.displayName||user.email.split('@')[0]||'User',
-        email:user.email||'',phone:'',accountId:'PIQ-'+rand,balance:0,
-        createdAt:firebase.firestore.FieldValue.serverTimestamp()
-      });
-      snap = await db.collection('users').doc(user.uid).get();
-    }
-    portUserData = snap.data()||{};
-    if (typeof smartsupp === 'function') { smartsupp('name', portUserData.fullName||'User'); smartsupp('email', portUserData.email||''); }
-    // Load KYC status — blocks deposit/withdraw if not verified
-    try {
-      var kycSnap = await db.collection('kyc').doc(user.uid).get();
-      kycApproved = kycSnap.exists && kycSnap.data().status === 'verified';
-    } catch(ke) { kycApproved = false; }
-
-    // Header
-    var initials=(portUserData.fullName||'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-    var av=document.querySelector('#headerAvatar,.profile-menu .avatar');
-    if(av) av.textContent=initials;
-    var pa=document.querySelector('#panelAccountId,.profile-panel .addr');
-    if(pa) pa.textContent=portUserData.accountId||'';
-    });
-    });
-
-    // Fetch positions + copy positions
-    var [manSnap,cpSnap] = await Promise.all([
-      db.collection('positions').where('userId','==',user.uid).get(),
-      db.collection('copyPositions').where('userId','==',user.uid).get()
-    ]);
-
-    allPositions = [
-      ...manSnap.docs.map(function(d){return Object.assign({id:d.id,_type:'manual'},d.data());}),
-      ...cpSnap.docs.map(function(d){return Object.assign({id:d.id,_type:'copy'},d.data());})
-    ].sort(function(a,b){
-      return ((b.createdAt&&b.createdAt.seconds)||0)-((a.createdAt&&a.createdAt.seconds)||0);
-    });
-
-    populateSummary(portUserData, allPositions);
-    buildPnlChart(allPositions, 'r-1d');
-    await refreshPanels(allPositions);
-
-  } catch(e) {
-    console.error('Portfolio load error:',e);
-    var _l=document.getElementById('loader');var _h=document.getElementById('siteHeader');var _m=document.getElementById('mainContent');
-    if(_l)_l.style.display='none';if(_h)_h.style.display='block';if(_m)_m.style.display='block';
-  }
-});
-</script>
-
-<!-- Smartsupp Live Chat -->
+</script>rtsupp Live Chat -->
 <script type="text/javascript">
 var _smartsupp = _smartsupp || {};
 _smartsupp.key = 'e074775f8766e30f72a60b6941af184692c32fe1';
