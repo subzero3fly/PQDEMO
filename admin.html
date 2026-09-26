@@ -317,21 +317,26 @@ function switchTab(btn) {
 }
 
 async function loadOverview() {
-  var [uSnap, mSnap, dSnap, wSnap] = await Promise.all([
-    db.collection('users').orderBy('createdAt','desc').get(),
-    db.collection('markets').where('status','==','active').get(),
-    db.collection('deposits').where('status','==','pending').get(),
-    db.collection('withdrawals').where('status','==','pending').get()
-  ]);
-  document.getElementById('ovUsers').textContent   = uSnap.size;
-  document.getElementById('ovMarkets').textContent = mSnap.size;
-  document.getElementById('ovDep').textContent     = dSnap.size;
-  document.getElementById('ovWd').textContent      = wSnap.size;
-  var recent = uSnap.docs.slice(0,8);
-  document.getElementById('ovUsersBody').innerHTML = recent.map(function(d){
-    var u = d.data();
-    return '<tr><td><strong>'+(u.fullName||'—')+'</strong></td><td>'+(u.email||'—')+'</td><td>'+(u.phone||'—')+'</td><td style="font-family:monospace;font-size:12px;">'+(u.accountId||'—')+'</td><td>'+fmtCurrency(u.balance)+'</td><td>'+fmtDate(u.createdAt)+'</td></tr>';
-  }).join('') || '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-dim);">No users yet.</td></tr>';
+  try {
+    var [uSnap, mSnap, dSnap, wSnap] = await Promise.all([
+      db.collection('users').orderBy('createdAt','desc').get(),
+      db.collection('markets').where('status','==','active').get(),
+      db.collection('transactions').where('type','==','deposit').where('status','==','pending').get(),
+      db.collection('transactions').where('type','==','withdrawal').where('status','==','pending').get()
+    ]);
+    document.getElementById('ovUsers').textContent   = uSnap.size;
+    document.getElementById('ovMarkets').textContent = mSnap.size;
+    document.getElementById('ovDep').textContent     = dSnap.size;
+    document.getElementById('ovWd').textContent      = wSnap.size;
+    var recent = uSnap.docs.slice(0,8);
+    document.getElementById('ovUsersBody').innerHTML = recent.map(function(d){
+      var u = d.data();
+      return '<tr><td><strong>'+(u.fullName||'—')+'</strong></td><td>'+(u.email||'—')+'</td><td>'+(u.phone||'—')+'</td><td style="font-family:monospace;font-size:12px;">'+(u.accountId||'—')+'</td><td>'+fmtCurrency(u.balance)+'</td><td>'+fmtDate(u.createdAt)+'</td></tr>';
+    }).join('') || '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-dim);">No users yet.</td></tr>';
+  } catch(e) {
+    console.error('loadOverview error:', e);
+    showToast('Failed to load overview: ' + e.message, 'err');
+  }
 }
 
 async function loadUsers() {
@@ -361,23 +366,32 @@ async function submitBalAdj() {
 }
 
 async function loadDeposits() {
-  var [dSnap, uSnap] = await Promise.all([
-    db.collection('transactions').where('type','==','deposit').orderBy('createdAt','desc').get(),
-    db.collection('users').get()
-  ]);
-  var umap = {}; uSnap.forEach(function(d){ umap[d.id] = d.data(); });
-  document.getElementById('depsBody').innerHTML = dSnap.docs.map(function(d){
-    var dep = d.data(), u = umap[dep.userId]||{};
-    var txShort = (dep.txid||'').slice(0,14)+'…';
-    var actions = dep.status === 'pending'
-      ? '<button class="a-btn" data-id="'+d.id+'" data-uid="'+dep.userId+'" data-amt="'+(dep.amount||0)+'" onclick="approveDeposit(this.dataset.id,this.dataset.uid,parseFloat(this.dataset.amt))">Approve</button> '+
-        '<button class="a-btn danger" data-id="'+d.id+'" onclick="rejectDeposit(this.dataset.id)">Reject</button>'
-      : '<span style="font-size:12px;color:var(--text-dim);">'+dep.status+'</span>';
-    return '<tr><td><strong>'+(u.fullName||'—')+'</strong></td><td>'+fmtCurrency(dep.amount)+'</td><td>'+(dep.coin||'—')+'</td>'+
-      '<td style="font-family:monospace;font-size:12px;" title="'+(dep.txid||'')+'">'+txShort+'</td>'+
-      '<td><span class="s-badge '+(dep.status||'pending')+'">'+(dep.status||'pending')+'</span></td>'+
-      '<td>'+fmtDate(dep.createdAt)+'</td><td>'+actions+'</td></tr>';
-  }).join('') || '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-dim);">No deposits.</td></tr>';
+  try {
+    var [dSnap, uSnap] = await Promise.all([
+      db.collection('transactions').where('type','==','deposit').get(),
+      db.collection('users').get()
+    ]);
+    var umap = {}; uSnap.forEach(function(d){ umap[d.id] = d.data(); });
+    var deps = dSnap.docs.slice().sort(function(a,b){
+      return ((b.data().createdAt&&b.data().createdAt.seconds)||0) - ((a.data().createdAt&&a.data().createdAt.seconds)||0);
+    });
+    document.getElementById('depsBody').innerHTML = deps.map(function(d){
+      var dep = d.data(), u = umap[dep.userId]||{};
+      var ref = dep.reference || dep.txid || '';
+      var txShort = ref ? (ref.slice(0,14)+(ref.length>14?'…':'')) : '—';
+      var actions = dep.status === 'pending'
+        ? '<button class="a-btn" data-id="'+d.id+'" data-uid="'+dep.userId+'" data-amt="'+(dep.amount||0)+'" onclick="approveDeposit(this.dataset.id,this.dataset.uid,parseFloat(this.dataset.amt))">Approve</button> '+
+          '<button class="a-btn danger" data-id="'+d.id+'" onclick="rejectDeposit(this.dataset.id)">Reject</button>'
+        : '<span style="font-size:12px;color:var(--text-dim);">'+dep.status+'</span>';
+      return '<tr><td><strong>'+(u.fullName||'—')+'</strong></td><td>'+fmtCurrency(dep.amount)+'</td><td>'+(dep.coin||'—')+'</td>'+
+        '<td style="font-family:monospace;font-size:12px;" title="'+ref+'">'+txShort+'</td>'+
+        '<td><span class="s-badge '+(dep.status||'pending')+'">'+(dep.status||'pending')+'</span></td>'+
+        '<td>'+fmtDate(dep.createdAt)+'</td><td>'+actions+'</td></tr>';
+    }).join('') || '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-dim);">No deposits.</td></tr>';
+  } catch(e) {
+    console.error('loadDeposits error:', e);
+    showToast('Failed to load deposits: ' + e.message, 'err');
+  }
 }
 
 async function approveDeposit(id, uid, amount) {
@@ -394,23 +408,31 @@ async function rejectDeposit(id) {
 }
 
 async function loadWithdrawals() {
-  var [wSnap, uSnap] = await Promise.all([
-    db.collection('transactions').where('type','==','withdrawal').orderBy('createdAt','desc').get(),
-    db.collection('users').get()
-  ]);
-  var umap = {}; uSnap.forEach(function(d){ umap[d.id] = d.data(); });
-  document.getElementById('wdsBody').innerHTML = wSnap.docs.map(function(d){
-    var wd = d.data(), u = umap[wd.userId]||{};
-    var addrShort = (wd.address||'').slice(0,14)+'…';
-    var actions = wd.status === 'pending'
-      ? '<button class="a-btn" data-id="'+d.id+'" onclick="approveWd(this.dataset.id)">Approve</button> '+
-        '<button class="a-btn danger" data-id="'+d.id+'" onclick="rejectWd(this.dataset.id)">Reject</button>'
-      : '<span style="font-size:12px;color:var(--text-dim);">'+wd.status+'</span>';
-    return '<tr><td><strong>'+(u.fullName||'—')+'</strong></td><td>'+fmtCurrency(wd.amount)+'</td><td>'+(wd.coin||'—')+'</td>'+
-      '<td style="font-family:monospace;font-size:12px;" title="'+(wd.address||'')+'">'+addrShort+'</td>'+
-      '<td><span class="s-badge '+(wd.status||'pending')+'">'+(wd.status||'pending')+'</span></td>'+
-      '<td>'+fmtDate(wd.createdAt)+'</td><td>'+actions+'</td></tr>';
-  }).join('') || '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-dim);">No withdrawals.</td></tr>';
+  try {
+    var [wSnap, uSnap] = await Promise.all([
+      db.collection('transactions').where('type','==','withdrawal').get(),
+      db.collection('users').get()
+    ]);
+    var umap = {}; uSnap.forEach(function(d){ umap[d.id] = d.data(); });
+    var wds = wSnap.docs.slice().sort(function(a,b){
+      return ((b.data().createdAt&&b.data().createdAt.seconds)||0) - ((a.data().createdAt&&a.data().createdAt.seconds)||0);
+    });
+    document.getElementById('wdsBody').innerHTML = wds.map(function(d){
+      var wd = d.data(), u = umap[wd.userId]||{};
+      var addrShort = (wd.address||'').slice(0,14)+((wd.address||'').length>14?'…':'');
+      var actions = wd.status === 'pending'
+        ? '<button class="a-btn" data-id="'+d.id+'" onclick="approveWd(this.dataset.id)">Approve</button> '+
+          '<button class="a-btn danger" data-id="'+d.id+'" onclick="rejectWd(this.dataset.id)">Reject</button>'
+        : '<span style="font-size:12px;color:var(--text-dim);">'+wd.status+'</span>';
+      return '<tr><td><strong>'+(u.fullName||'—')+'</strong></td><td>'+fmtCurrency(wd.amount)+'</td><td>'+(wd.coin||'—')+'</td>'+
+        '<td style="font-family:monospace;font-size:12px;" title="'+(wd.address||'')+'">'+(addrShort||'—')+'</td>'+
+        '<td><span class="s-badge '+(wd.status||'pending')+'">'+(wd.status||'pending')+'</span></td>'+
+        '<td>'+fmtDate(wd.createdAt)+'</td><td>'+actions+'</td></tr>';
+    }).join('') || '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-dim);">No withdrawals.</td></tr>';
+  } catch(e) {
+    console.error('loadWithdrawals error:', e);
+    showToast('Failed to load withdrawals: ' + e.message, 'err');
+  }
 }
 
 async function approveWd(id) {
