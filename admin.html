@@ -155,6 +155,7 @@
     <button class="admin-tab"        data-tab="withdrawals" onclick="switchTab(this)">Withdrawals</button>
     <button class="admin-tab"        data-tab="wallets"     onclick="switchTab(this)">Wallets</button>
     <button class="admin-tab"        data-tab="kyc"         onclick="switchTab(this)">KYC</button>
+    <button class="admin-tab"        data-tab="copytrading" onclick="switchTab(this)">Copy Trading</button>
   </div>
 
   <div class="admin-wrap">
@@ -255,6 +256,30 @@
       </div>
     </div>
 
+    <!-- COPY TRADING -->
+    <div class="admin-panel" id="panel-copytrading">
+      <p style="font-size:13.5px;color:var(--text-dim);background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:20px;line-height:1.6;">
+        Controls how the 10 Copy Trading experts fire trades for anyone following them. Forex &amp; Commodities only — these traders never touch Crypto.
+      </p>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;">
+        <h3 style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:18px;">Copy Trading Settings</h3>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div><label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Max Trades Per Day (per follower)</label>
+            <input id="ctMaxTrades" type="number" min="2" max="50" step="2" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;">
+            <div style="font-size:11.5px;color:var(--text-faint);margin-top:5px;">Trades fire in pairs of 2, spaced evenly across the day.</div>
+          </div>
+          <div><label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Risk Per Trade (% of balance)</label>
+            <input id="ctRiskPercent" type="number" min="1" max="100" step="1" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;"></div>
+          <div><label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Reward : Risk Ratio</label>
+            <input id="ctRrRatio" type="number" min="0.5" max="5" step="0.5" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;">
+            <div style="font-size:11.5px;color:var(--text-faint);margin-top:5px;">Take-profit distance = stop-loss distance × this ratio.</div>
+          </div>
+        </div>
+        <div id="ctSaveMsg" style="display:none;font-size:13px;margin-top:14px;padding:10px 14px;border-radius:10px;"></div>
+        <button onclick="saveCopyTradingSettings()" style="margin-top:18px;width:100%;height:46px;border-radius:99px;background:var(--accent,#7c5cff);color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:inherit;">Save Settings</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -314,6 +339,7 @@ function switchTab(btn) {
   if (tab === 'withdrawals') loadWithdrawals();
   if (tab === 'wallets')     loadWallets();
   if (tab === 'kyc')         loadKyc();
+  if (tab === 'copytrading') loadCopyTradingSettings();
 }
 
 async function loadOverview() {
@@ -563,6 +589,46 @@ async function toggleAutoVerify(checked) {
     await db.collection('settings').doc('kyc').set({ autoVerify: checked }, { merge:true });
     showToast('Auto-verify '+(checked?'enabled':'disabled')+'.');
   } catch(e) { showToast('Failed to update setting.'); }
+}
+
+// ── COPY TRADING SETTINGS ────────────────────────────────────────────────────
+async function loadCopyTradingSettings() {
+  try {
+    var snap = await db.collection('settings').doc('copyTrading').get();
+    var d = snap.exists ? snap.data() : {};
+    document.getElementById('ctMaxTrades').value   = typeof d.maxTradesPerDay === 'number' ? d.maxTradesPerDay : 6;
+    document.getElementById('ctRiskPercent').value = typeof d.riskPercent     === 'number' ? d.riskPercent     : 10;
+    document.getElementById('ctRrRatio').value     = typeof d.rrRatio        === 'number' ? d.rrRatio         : 1;
+  } catch(e) {
+    console.error('loadCopyTradingSettings error:', e);
+    showToast('Failed to load Copy Trading settings: ' + e.message, 'err');
+  }
+}
+async function saveCopyTradingSettings() {
+  var maxTrades = parseInt(document.getElementById('ctMaxTrades').value, 10);
+  var riskPct   = parseFloat(document.getElementById('ctRiskPercent').value);
+  var rr        = parseFloat(document.getElementById('ctRrRatio').value);
+  var msgEl     = document.getElementById('ctSaveMsg');
+
+  if (!maxTrades || maxTrades < 2 || isNaN(riskPct) || riskPct <= 0 || isNaN(rr) || rr <= 0) {
+    msgEl.textContent = 'Please enter valid values for all fields.';
+    msgEl.style.display = 'block';
+    msgEl.style.background = 'var(--no-bg)'; msgEl.style.color = 'var(--no)';
+    return;
+  }
+  try {
+    await db.collection('settings').doc('copyTrading').set({
+      maxTradesPerDay: maxTrades, riskPercent: riskPct, rrRatio: rr
+    }, { merge:true });
+    msgEl.textContent = 'Copy Trading settings saved.';
+    msgEl.style.display = 'block';
+    msgEl.style.background = 'var(--yes-bg)'; msgEl.style.color = 'var(--yes)';
+    showToast('Copy Trading settings saved.');
+  } catch(e) {
+    msgEl.textContent = 'Failed to save settings.';
+    msgEl.style.display = 'block';
+    msgEl.style.background = 'var(--no-bg)'; msgEl.style.color = 'var(--no)';
+  }
 }
 
 function doSignOut() { auth.signOut().then(function(){ location.href = 'login.html'; }); }

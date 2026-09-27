@@ -111,6 +111,17 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ── Copy trading state (Forex/Commodity expert traders) ─────────────────
+    // Same shape as copyBetting above — a single doc per user, which is what
+    // structurally enforces "only one active follow across both sections":
+    // the unified copytrade.html checks both docs before allowing a new follow.
+    match /copyTrading/{uid} {
+      allow read:   if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
     // ── Transactions ──────────────────────────────────────────────────────────
     match /transactions/{txId} {
       allow read:   if isSignedIn() &&
