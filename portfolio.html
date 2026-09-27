@@ -310,9 +310,53 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script src="prediction-engine.js"></script>
+<script src="trading-engine.js"></script>
 <script>
 function fmtBal(n) {
   return '$' + (parseFloat(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+// trading-engine.js's market-close watcher calls showToast(); alias it to this page's own toast.
+function showToast(msg, type) { pToast(msg, type); }
+
+// ── Background trade monitoring (TP/SL + stop-out) ──────────────────────────
+// Only starts polling live prices if the user actually has an open trade —
+// no point loading CoinGecko/Frankfurter/GoldAPI for someone who's never traded.
+var tradePrices = {};
+async function startTradeMonitoring() {
+  try {
+    var openSnap = await db.collection('trades').where('userId','==',portUser.uid).where('status','==','open').get();
+    if (openSnap.empty) return;
+    await loadLivePrices(tradePrices);
+    await runTradeChecks();
+    startPriceRefresh(tradePrices, runTradeChecks);
+  } catch(e) { console.warn('Trade monitoring error:', e); }
+}
+
+async function runTradeChecks() {
+  try {
+    var snap = await db.collection('trades').where('userId','==',portUser.uid).where('status','==','open').get();
+    var open = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+    if (!open.length) return;
+
+    var closed = await checkTpSl(portUser.uid, open, tradePrices);
+    if (closed.length) {
+      closed.forEach(function(c){ portUserData.balance = (portUserData.balance||0) + c.pnl; });
+      open = open.filter(function(t){ return !closed.some(function(c){ return c.trade.id === t.id; }); });
+      var wdAvl = document.getElementById('wdAvail');
+      if (wdAvl) wdAvl.textContent = pFmt(portUserData.balance||0);
+      populateSummary(portUserData, allPositions);
+    }
+    if (!open.length) return;
+
+    await checkStopOut(portUser.uid, portUserData.balance, open, tradePrices, function() {
+      portUserData.balance = 0;
+      var wdAvl2 = document.getElementById('wdAvail');
+      if (wdAvl2) wdAvl2.textContent = pFmt(0);
+      populateSummary(portUserData, allPositions);
+      document.getElementById('stopOutModal').style.display = 'flex';
+    });
+  } catch(e) { console.warn('Trade check error:', e); }
 }
 
 auth.onAuthStateChanged(async function(user) {
@@ -368,6 +412,9 @@ auth.onAuthStateChanged(async function(user) {
     var wdAvl = document.getElementById('wdAvail');
     if (wdAvl) wdAvl.textContent = pFmt(portUserData.balance||0);
 
+    // Background trade monitoring — TP/SL + stop-out, only if trades exist
+    startTradeMonitoring();
+
   } catch(e) {
     console.warn('Portfolio auth error:', e);
   }
@@ -421,6 +468,18 @@ auth.onAuthStateChanged(async function(user) {
       <div id="cfErr" style="font-size:13px;color:var(--no);display:none;"></div>
       <button onclick="submitCryptoDeposit()" style="height:46px;border-radius:99px;background:var(--accent);color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:inherit;">Submit for Review</button>
     </div>
+  </div>
+</div>
+
+<!-- Stop-out modal -->
+<div class="modal-overlay" id="stopOutModal" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.6);align-items:center;justify-content:center;">
+  <div class="modal-box" style="max-width:400px;width:100%;margin:0 auto;text-align:center;">
+    <div style="width:52px;height:52px;border-radius:50%;background:var(--no-bg);color:var(--no);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+      <svg style="width:26px;height:26px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <h3 style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:10px;">Account Stopped Out</h3>
+    <p style="font-size:13.5px;color:var(--text-dim);line-height:1.6;margin-bottom:18px;">Your equity reached zero. All open trading positions have been closed and your balance has been set to <strong style="color:var(--text);">$0.00</strong>. Please make a deposit to continue trading.</p>
+    <button onclick="document.getElementById('stopOutModal').style.display='none'" style="width:100%;height:46px;border-radius:99px;background:var(--surface-2);color:var(--text);border:1px solid var(--border);font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">Close</button>
   </div>
 </div>
 

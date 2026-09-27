@@ -373,8 +373,86 @@ async function closeAllTradesForMarketClose() {
 }
 
 // ============================================================
-// TRADE P&L CALCULATION
+// TP / SL CHECK
+// Closes any open trade whose take-profit or stop-loss has been crossed,
+// at the exact TP/SL level (never the price that jumped past it). Shared
+// by trade.html and portfolio.html so both run identical logic.
+// Returns the list of trades that were closed, each with its final pnl.
 // ============================================================
+async function checkTpSl(uid, openTrades, pricesObj) {
+  var closed = [];
+  var toClose = [];
+
+  openTrades.forEach(function(t) {
+    var cur = pricesObj[t.symbol] || t.entryPrice;
+    if (!cur) return;
+    var hit = null, exitPrice = cur;
+    if (t.takeProfit) {
+      if (t.type==='BUY'  && cur >= t.takeProfit) { hit='tp'; exitPrice=t.takeProfit; }
+      if (t.type==='SELL' && cur <= t.takeProfit) { hit='tp'; exitPrice=t.takeProfit; }
+    }
+    if (!hit && t.stopLoss) {
+      if (t.type==='BUY'  && cur <= t.stopLoss) { hit='sl'; exitPrice=t.stopLoss; }
+      if (t.type==='SELL' && cur >= t.stopLoss) { hit='sl'; exitPrice=t.stopLoss; }
+    }
+    if (hit) toClose.push({ trade:t, reason:hit, price:exitPrice });
+  });
+
+  for (var i=0; i<toClose.length; i++) {
+    var item = toClose[i], t = item.trade;
+    var pnl = calcPnL(t, item.price);
+    await db.collection('trades').doc(t.id).update({
+      status: 'closed', exitPrice: item.price, profitLoss: pnl,
+      closedAt: firebase.firestore.FieldValue.serverTimestamp(), closedBy: item.reason
+    });
+    await db.collection('users').doc(uid).update({ balance: firebase.firestore.FieldValue.increment(pnl) });
+    closed.push({ trade:t, pnl:pnl, reason:item.reason });
+  }
+  return closed;
+}
+
+// ============================================================
+// STOP OUT
+// If equity (balance + unrealised P&L across all open trades) hits zero or
+// below, force-close every open trade at the current price, zero the shared
+// balance, and hand control back to the caller (which shows its own modal).
+// Only trading positions are touched — prediction bets already deducted
+// their stake upfront and carry no ongoing unrealised P&L, so they're left
+// alone entirely.
+// ============================================================
+var _stoppingOut = false;
+async function checkStopOut(uid, balance, openTrades, pricesObj, onStopOut) {
+  if (_stoppingOut || !openTrades || !openTrades.length) return false;
+  var totalUnrealized = 0;
+  openTrades.forEach(function(t) {
+    totalUnrealized += calcPnL(t, pricesObj[t.symbol] || t.entryPrice);
+  });
+  var equity = (balance || 0) + totalUnrealized;
+  if (equity > 0) return false;
+
+  _stoppingOut = true;
+  try {
+    for (var i = 0; i < openTrades.length; i++) {
+      var t = openTrades[i];
+      var exitPrice = pricesObj[t.symbol] || t.entryPrice;
+      var pnl = calcPnL(t, exitPrice);
+      await db.collection('trades').doc(t.id).update({
+        status: 'closed', exitPrice: exitPrice, profitLoss: pnl,
+        closedAt: firebase.firestore.FieldValue.serverTimestamp(), closedBy: 'stopout'
+      });
+    }
+    await db.collection('users').doc(uid).update({ balance: 0 });
+    if (onStopOut) onStopOut();
+    return true;
+  } catch(e) {
+    console.error('Stop out error:', e);
+    return false;
+  } finally {
+    _stoppingOut = false;
+  }
+}
+
+
 function calcPnL(trade, currentPrice) {
   if (!currentPrice || !trade.entryPrice) return 0;
   var multiplier = trade.symbol.includes('JPY') ? 100 : 10000;

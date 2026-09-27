@@ -122,6 +122,10 @@
     .modal-cancel  { background:var(--surface-2); color:var(--text); border:1px solid var(--border) !important; }
     .modal-confirm { background:var(--no); color:#fff; }
 
+    /* ── Stop-out modal ── */
+    .stopout-icon { width:52px; height:52px; border-radius:50%; background:var(--no-bg); color:var(--no); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; }
+    .stopout-icon svg { width:26px; height:26px; }
+
     /* ── Toast ── */
     .toast-msg {
       position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(16px);
@@ -253,6 +257,18 @@
   </div>
 </div>
 
+<!-- Stop-out modal -->
+<div class="modal-overlay" id="stopOutModal">
+  <div class="modal-box" style="text-align:center;">
+    <div class="stopout-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <h3>Account Stopped Out</h3>
+    <p style="font-size:13.5px;color:var(--text-dim);line-height:1.6;margin-bottom:18px;">Your equity reached zero. All open positions have been closed and your balance has been set to <strong style="color:var(--text);">$0.00</strong>. Please make a deposit to continue trading.</p>
+    <button class="modal-cancel" style="width:100%;" onclick="document.getElementById('stopOutModal').style.display='none'">Close</button>
+  </div>
+</div>
+
 <!-- Tab bar -->
 <nav class="tab-bar" aria-label="Primary">
   <a href="index.html">
@@ -326,6 +342,12 @@ function updateBalanceDisplay() {
   if (b) b.textContent = fmtBal(userData.balance || 0);
   var p = document.getElementById('previewBalance');
   if (p) p.textContent = fmtBal(userData.balance || 0);
+}
+
+function onStopOutTriggered() {
+  userData.balance = 0;
+  updateBalanceDisplay();
+  document.getElementById('stopOutModal').style.display = 'flex';
 }
 
 function updateMarketBanner() {
@@ -471,35 +493,18 @@ async function loadMiniPositions() {
   var snap = await db.collection('trades').where('userId','==',currentUser.uid).get();
   var allOpen = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); }).filter(function(t){ return t.status==='open'; });
 
-  // Run TP/SL check before displaying
-  var toClose = [];
-  allOpen.forEach(function(t) {
-    var cur = prices[t.symbol] || t.entryPrice;
-    if (!cur) return;
-    var hit = null, exitPrice = cur;
-    if (t.takeProfit) {
-      if (t.type==='BUY'  && cur >= t.takeProfit) { hit='tp'; exitPrice=t.takeProfit; }
-      if (t.type==='SELL' && cur <= t.takeProfit) { hit='tp'; exitPrice=t.takeProfit; }
-    }
-    if (!hit && t.stopLoss) {
-      if (t.type==='BUY'  && cur <= t.stopLoss) { hit='sl'; exitPrice=t.stopLoss; }
-      if (t.type==='SELL' && cur >= t.stopLoss) { hit='sl'; exitPrice=t.stopLoss; }
-    }
-    if (hit) toClose.push({ trade:t, reason:hit, price:exitPrice });
-  });
-
-  for (var i=0; i<toClose.length; i++) {
-    var item = toClose[i], t = item.trade;
-    var pnl = calcPnL(t, item.price);
-    await db.collection('trades').doc(t.id).update({ status:'closed', exitPrice:item.price, profitLoss:pnl, closedAt:firebase.firestore.FieldValue.serverTimestamp(), closedBy:item.reason });
-    await db.collection('users').doc(currentUser.uid).update({ balance: firebase.firestore.FieldValue.increment(pnl) });
-    userData.balance = (userData.balance||0) + pnl;
+  var closed = await checkTpSl(currentUser.uid, allOpen, prices);
+  if (closed.length) {
+    closed.forEach(function(c){ userData.balance = (userData.balance||0) + c.pnl; });
     updateBalanceDisplay();
   }
 
-  var open = toClose.length
+  var open = closed.length
     ? (await db.collection('trades').where('userId','==',currentUser.uid).get()).docs.map(function(d){ return Object.assign({id:d.id},d.data()); }).filter(function(t){ return t.status==='open'; })
     : allOpen;
+
+  var stoppedOut = await checkStopOut(currentUser.uid, userData.balance, open, prices, onStopOutTriggered);
+  if (stoppedOut) open = [];
 
   document.getElementById('posCount').textContent = open.length;
   var el = document.getElementById('miniPositions');
