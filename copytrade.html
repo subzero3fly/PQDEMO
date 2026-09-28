@@ -613,7 +613,6 @@ auth.onAuthStateChanged(async function(user) {
     userData = snap.data()||{};
     if (typeof populateHeader === 'function') populateHeader(userData);
     if (typeof populateMobileDrawer === 'function') populateMobileDrawer(userData);
-    if (typeof smartsupp === 'function') { smartsupp('name', userData.fullName||'User'); smartsupp('email', userData.email||''); }
 
     // Check if already following (betting)
     var cbSnap = await db.collection('copyBetting').doc(user.uid).get();
@@ -647,19 +646,7 @@ auth.onAuthStateChanged(async function(user) {
   }
 });
 </script>
-<!-- Smartsupp Live Chat -->
-<script type="text/javascript">
-var _smartsupp = _smartsupp || {};
-_smartsupp.key = 'e074775f8766e30f72a60b6941af184692c32fe1';
-window.smartsupp||(function(d) {
-  var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
-  s=d.getElementsByTagName('script')[0];
-  c=d.createElement('script');
-  c.type='text/javascript';c.charset='utf-8';c.async=true;
-  c.src='https://www.smartsuppchat.com/loader.js?';
-  s.parentNode.insertBefore(c,s);
-})(document);
-</script>
+<script src="chat-widget.js"></script>
 
 
 
@@ -681,7 +668,7 @@ document.addEventListener('click', function(e) {
 <script>
 function doLogout(){auth.signOut().then(function(){window.location.href='login.html';});}
 function openKYC(){ window.location.href='kyc.html'; }
-function populateHeader(ud){var i=(ud.fullName||'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();var av=document.getElementById('headerAvatar');var pn=document.getElementById('panelName');var pa=document.getElementById('panelAccountId');var ge=document.getElementById('headerGuest');var ae=document.getElementById('headerAuth');if(av)av.textContent=i;if(pn)pn.textContent=ud.fullName||'User';if(pa)pa.textContent=ud.accountId||'';if(ge)ge.style.display='none';if(ae)ae.style.display='flex';if(typeof smartsupp==='function'){smartsupp('name',ud.fullName||'User');smartsupp('email',ud.email||'');}
+function populateHeader(ud){var i=(ud.fullName||'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();var av=document.getElementById('headerAvatar');var pn=document.getElementById('panelName');var pa=document.getElementById('panelAccountId');var ge=document.getElementById('headerGuest');var ae=document.getElementById('headerAuth');if(av)av.textContent=i;if(pn)pn.textContent=ud.fullName||'User';if(pa)pa.textContent=ud.accountId||'';if(ge)ge.style.display='none';if(ae)ae.style.display='flex';
   if(typeof populateMobileDrawer==='function')populateMobileDrawer(ud);
   if(typeof populateDesktopDrawer==='function')populateDesktopDrawer(ud);}
 </script>

@@ -157,6 +157,25 @@ service cloud.firestore {
       allow write: if doc == 'marketSync' ? isSignedIn() : isAdmin();
     }
 
+    // ── Support chat ──────────────────────────────────────────────────────────
+    // chatId is always the participant's auth uid — real for signed-in users,
+    // anonymous for guests (via signInAnonymously). This gives every user or
+    // guest exactly one conversation thread, readable/writable by themselves
+    // or an admin, with no cross-user access possible.
+    match /chats/{chatId} {
+      allow read:   if isSignedIn() && (request.auth.uid == chatId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == chatId;
+      allow update: if isSignedIn() && (request.auth.uid == chatId || isAdmin());
+      allow delete: if isAdmin();
+
+      match /messages/{messageId} {
+        allow read:   if isSignedIn() && (request.auth.uid == chatId || isAdmin());
+        allow create: if isSignedIn() && (request.auth.uid == chatId || isAdmin());
+        allow update: if isAdmin();
+        allow delete: if isAdmin();
+      }
+    }
+
     // ── KYC ──────────────────────────────────────────────────────────────────
     match /kyc/{uid} {
       allow read:   if isOwner(uid) || isAdmin();

@@ -598,7 +598,6 @@ auth.onAuthStateChanged(async function(user) {
       snap = await db.collection('users').doc(user.uid).get();
     }
     userData = snap.data() || {};
-    if (typeof smartsupp === 'function') { smartsupp('name', userData.fullName||'User'); smartsupp('email', userData.email||''); }
     if (typeof populateMobileDrawer  === 'function') populateMobileDrawer(userData);
     if (typeof populateDesktopDrawer === 'function') populateDesktopDrawer(userData);
   } catch(e) { console.warn('User load error:', e); }
@@ -626,20 +625,7 @@ auth.onAuthStateChanged(async function(user) {
   document.getElementById('mainContent').style.display = 'block';
 });
 </script>
-<!-- Smartsupp Live Chat -->
-<script type="text/javascript">
-var _smartsupp = _smartsupp || {};
-_smartsupp.key = 'e074775f8766e30f72a60b6941af184692c32fe1';
-window.smartsupp||(function(d) {
-  var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
-  s=d.getElementsByTagName('script')[0];
-  c=d.createElement('script');
-  c.type='text/javascript';c.charset='utf-8';c.async=true;
-  c.src='https://www.smartsuppchat.com/loader.js?';
-  s.parentNode.insertBefore(c,s);
-})(document);
-</script>
-<noscript>Powered by <a href="https://www.smartsupp.com" target="_blank">Smartsupp</a></noscript>
+<script src="chat-widget.js"></script>
 
 <script>
 function doLogout(){ auth.signOut().then(function(){ window.location.href='login.html'; }); }

@@ -155,7 +155,8 @@
     <button class="admin-tab"        data-tab="withdrawals" onclick="switchTab(this)">Withdrawals</button>
     <button class="admin-tab"        data-tab="wallets"     onclick="switchTab(this)">Wallets</button>
     <button class="admin-tab"        data-tab="kyc"         onclick="switchTab(this)">KYC</button>
-    <button class="admin-tab"        data-tab="copytrading" onclick="switchTab(this)">Copy Trading</button>
+    <button class="admin-tab"        data-tab="copyconfig"  onclick="switchTab(this)">Copy Trading Config</button>
+    <button class="admin-tab"        data-tab="support"     onclick="switchTab(this)">Support <span id="supportBadge" style="display:none;min-width:18px;height:18px;padding:0 5px;margin-left:6px;border-radius:99px;background:#f2496b;color:#fff;font-size:11px;font-weight:800;align-items:center;justify-content:center;box-sizing:border-box;vertical-align:middle;">0</span></button>
   </div>
 
   <div class="admin-wrap">
@@ -256,30 +257,51 @@
       </div>
     </div>
 
-    <!-- COPY TRADING -->
-    <div class="admin-panel" id="panel-copytrading">
+    <!-- COPY TRADING CONFIG (per-user) -->
+    <div class="admin-panel" id="panel-copyconfig">
       <p style="font-size:13.5px;color:var(--text-dim);background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:20px;line-height:1.6;">
-        Controls how the 10 Copy Trading experts fire trades for anyone following them. Forex &amp; Commodities only — these traders never touch Crypto.
+        Per-user Copy Trading settings. Each row saves independently and takes effect on that user's next trade. Separate from Copy Betting config.
       </p>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;">
-        <h3 style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:18px;">Copy Trading Settings</h3>
-        <div style="display:flex;flex-direction:column;gap:16px;">
-          <div><label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Max Trades Per Day (per follower)</label>
-            <input id="ctMaxTrades" type="number" min="2" max="50" step="2" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;">
-            <div style="font-size:11.5px;color:var(--text-faint);margin-top:5px;">Trades fire in pairs of 2, spaced evenly across the day.</div>
-          </div>
-          <div><label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Risk Per Trade (% of balance)</label>
-            <input id="ctRiskPercent" type="number" min="1" max="100" step="1" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;"></div>
-          <div><label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Reward : Risk Ratio</label>
-            <input id="ctRrRatio" type="number" min="0.5" max="5" step="0.5" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;">
-            <div style="font-size:11.5px;color:var(--text-faint);margin-top:5px;">Take-profit distance = stop-loss distance × this ratio.</div>
-          </div>
-        </div>
-        <div id="ctSaveMsg" style="display:none;font-size:13px;margin-top:14px;padding:10px 14px;border-radius:10px;"></div>
-        <button onclick="saveCopyTradingSettings()" style="margin-top:18px;width:100%;height:46px;border-radius:99px;background:var(--accent,#7c5cff);color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:inherit;">Save Settings</button>
+      <div class="admin-table-wrap">
+        <table class="admin-tbl">
+          <thead><tr><th>User</th><th>Max Trades/Day</th><th>RR Ratio</th><th>Risk % / Trade</th><th>Action</th></tr></thead>
+          <tbody id="copyConfigBody"></tbody>
+        </table>
       </div>
     </div>
 
+    <!-- SUPPORT INBOX -->
+    <div class="admin-panel" id="panel-support">
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <button onclick="setSupportFilter('open')"   id="supf-open"   style="padding:6px 14px;border-radius:99px;border:1px solid var(--border);background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Open</button>
+        <button onclick="setSupportFilter('closed')" id="supf-closed" style="padding:6px 14px;border-radius:99px;border:1px solid var(--border);background:none;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Closed</button>
+      </div>
+      <div id="supportList" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Support chat thread modal -->
+<div class="modal-back" id="chatModal">
+  <div class="modal-box" style="max-width:540px;padding:0;display:flex;flex-direction:column;height:min(640px,88vh);overflow:hidden;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <div style="min-width:0;">
+        <div id="chatModalName" style="font-size:16px;font-weight:800;color:var(--text);">—</div>
+        <div id="chatModalSub" style="font-size:12px;color:var(--text-faint);margin-top:3px;word-break:break-all;">—</div>
+      </div>
+      <button onclick="closeChatThread()" style="background:none;border:none;cursor:pointer;color:var(--text-dim);padding:4px;line-height:0;flex-shrink:0;" aria-label="Close">
+        <svg style="width:20px;height:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div id="chatThread" style="flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px;"></div>
+    <div style="border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:8px;flex-shrink:0;">
+      <input id="chatReplyInput" class="form-input" style="flex:1;height:42px;" placeholder="Type a reply…" onkeydown="if(event.key==='Enter')sendAdminReply()">
+      <button class="a-btn" onclick="sendAdminReply()" style="height:42px;padding:0 18px;">Send</button>
+    </div>
+    <div style="padding:0 16px 14px;display:flex;justify-content:flex-end;flex-shrink:0;">
+      <button class="a-btn" id="chatToggleStatusBtn" onclick="toggleChatStatus()">Close conversation</button>
+    </div>
   </div>
 </div>
 
@@ -339,7 +361,7 @@ function switchTab(btn) {
   if (tab === 'withdrawals') loadWithdrawals();
   if (tab === 'wallets')     loadWallets();
   if (tab === 'kyc')         loadKyc();
-  if (tab === 'copytrading') loadCopyTradingSettings();
+  if (tab === 'copyconfig')  loadCopyConfig();
 }
 
 async function loadOverview() {
@@ -591,44 +613,56 @@ async function toggleAutoVerify(checked) {
   } catch(e) { showToast('Failed to update setting.'); }
 }
 
-// ── COPY TRADING SETTINGS ────────────────────────────────────────────────────
-async function loadCopyTradingSettings() {
+// ── COPY TRADING CONFIG (per-user) ──────────────────────────────────────────
+var RR_OPTIONS = [0.5, 1, 2, 3];
+function rrOptionsHtml(current) {
+  return RR_OPTIONS.map(function(v) {
+    return '<option value="'+v+'"'+(v===current?' selected':'')+'>1:'+v+'</option>';
+  }).join('');
+}
+async function loadCopyConfig() {
   try {
-    var snap = await db.collection('settings').doc('copyTrading').get();
-    var d = snap.exists ? snap.data() : {};
-    document.getElementById('ctMaxTrades').value   = typeof d.maxTradesPerDay === 'number' ? d.maxTradesPerDay : 6;
-    document.getElementById('ctRiskPercent').value = typeof d.riskPercent     === 'number' ? d.riskPercent     : 10;
-    document.getElementById('ctRrRatio').value     = typeof d.rrRatio        === 'number' ? d.rrRatio         : 1;
+    var snap = await db.collection('users').orderBy('createdAt','desc').get();
+    document.getElementById('copyConfigBody').innerHTML = snap.docs.map(function(d){
+      var u = d.data();
+      var maxTrades = typeof u.copyMaxTrades === 'number' ? u.copyMaxTrades : 5;
+      var rr        = typeof u.copyRR        === 'number' ? u.copyRR        : 1;
+      var risk      = typeof u.copyRisk      === 'number' ? u.copyRisk      : 10;
+      return '<tr data-uid="'+d.id+'">'+
+        '<td><strong>'+(u.fullName||'—')+'</strong><br><span style="font-size:11px;color:var(--text-faint);">'+(u.email||'—')+'</span></td>'+
+        '<td><input type="number" class="cc-maxtrades" min="2" max="50" step="2" value="'+maxTrades+'" style="width:80px;height:36px;padding:0 8px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;box-sizing:border-box;"></td>'+
+        '<td><select class="cc-rr" style="height:36px;padding:0 8px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;box-sizing:border-box;">'+rrOptionsHtml(rr)+'</select></td>'+
+        '<td><input type="number" class="cc-risk" min="1" max="100" step="1" value="'+risk+'" style="width:70px;height:36px;padding:0 8px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;box-sizing:border-box;"></td>'+
+        '<td><button class="a-btn" onclick="saveCopyConfig(this)">Save</button></td>'+
+      '</tr>';
+    }).join('') || '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-dim);">No users.</td></tr>';
   } catch(e) {
-    console.error('loadCopyTradingSettings error:', e);
-    showToast('Failed to load Copy Trading settings: ' + e.message, 'err');
+    console.error('loadCopyConfig error:', e);
+    showToast('Failed to load Copy Trading Config: ' + e.message, 'err');
   }
 }
-async function saveCopyTradingSettings() {
-  var maxTrades = parseInt(document.getElementById('ctMaxTrades').value, 10);
-  var riskPct   = parseFloat(document.getElementById('ctRiskPercent').value);
-  var rr        = parseFloat(document.getElementById('ctRrRatio').value);
-  var msgEl     = document.getElementById('ctSaveMsg');
+async function saveCopyConfig(btn) {
+  var row = btn.closest('tr');
+  var uid = row.dataset.uid;
+  var maxTrades = parseInt(row.querySelector('.cc-maxtrades').value, 10);
+  var rr        = parseFloat(row.querySelector('.cc-rr').value);
+  var risk      = parseFloat(row.querySelector('.cc-risk').value);
 
-  if (!maxTrades || maxTrades < 2 || isNaN(riskPct) || riskPct <= 0 || isNaN(rr) || rr <= 0) {
-    msgEl.textContent = 'Please enter valid values for all fields.';
-    msgEl.style.display = 'block';
-    msgEl.style.background = 'var(--no-bg)'; msgEl.style.color = 'var(--no)';
+  if (!maxTrades || maxTrades < 2 || isNaN(rr) || isNaN(risk) || risk <= 0) {
+    showToast('Enter valid values before saving.', 'err');
     return;
   }
+  var originalText = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Saving…';
   try {
-    await db.collection('settings').doc('copyTrading').set({
-      maxTradesPerDay: maxTrades, riskPercent: riskPct, rrRatio: rr
-    }, { merge:true });
-    msgEl.textContent = 'Copy Trading settings saved.';
-    msgEl.style.display = 'block';
-    msgEl.style.background = 'var(--yes-bg)'; msgEl.style.color = 'var(--yes)';
-    showToast('Copy Trading settings saved.');
+    await db.collection('users').doc(uid).update({
+      copyMaxTrades: maxTrades, copyRR: rr, copyRisk: risk
+    });
+    showToast('Copy Trading config saved.');
   } catch(e) {
-    msgEl.textContent = 'Failed to save settings.';
-    msgEl.style.display = 'block';
-    msgEl.style.background = 'var(--no-bg)'; msgEl.style.color = 'var(--no)';
+    showToast('Failed to save: ' + e.message, 'err');
   }
+  btn.disabled = false; btn.textContent = originalText;
 }
 
 function doSignOut() { auth.signOut().then(function(){ location.href = 'login.html'; }); }
@@ -934,6 +968,161 @@ async function submitResolveMarket() {
   btn.disabled = false; btn.textContent = 'Resolve Market';
 }
 
+// ── SUPPORT INBOX ──────────────────────────────────────────────────────────
+// Live view of every chats/{chatId} doc. Guest-typed text is untrusted, so
+// everything interpolated into innerHTML goes through supEsc().
+var _chatDocs = [], _supportFilter = 'open', _openChatId = null, _threadUnsub = null;
+
+function supEsc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, function(c) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function supSecs(ts) { return (ts && ts.seconds) || 0; }
+function supAgo(ts) {
+  if (!ts || !ts.seconds) return '';
+  var m = Math.floor((Date.now()/1000 - ts.seconds) / 60);
+  if (m < 1) return 'just now';
+  if (m < 60) return m + 'm ago';
+  var h = Math.floor(m / 60);
+  if (h < 24) return h + 'h ago';
+  return Math.floor(h / 24) + 'd ago';
+}
+function supPage(url) {
+  if (!url) return '';
+  try { var p = new URL(url).pathname.split('/').pop(); return p || 'index.html'; } catch(e) { return ''; }
+}
+
+function startSupportInbox() {
+  db.collection('chats').onSnapshot(function(snap) {
+    _chatDocs = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+    // Unread conversations first, then most recent activity
+    _chatDocs.sort(function(a, b) {
+      var au = a.unreadByAdmin ? 1 : 0, bu = b.unreadByAdmin ? 1 : 0;
+      if (au !== bu) return bu - au;
+      return supSecs(b.lastMessageAt) - supSecs(a.lastMessageAt);
+    });
+    var unread = _chatDocs.filter(function(c){ return c.unreadByAdmin && (c.status||'open') === 'open'; }).length;
+    var badge = document.getElementById('supportBadge');
+    badge.textContent = unread;
+    badge.style.display = unread ? 'inline-flex' : 'none';
+    renderSupportList();
+    // Keep the header of an open thread in sync (e.g. status changes)
+    if (_openChatId) updateChatModalHeader();
+  }, function(e) { console.warn('Support inbox listener error:', e.message); });
+}
+
+function setSupportFilter(f) {
+  _supportFilter = f;
+  ['open','closed'].forEach(function(k) {
+    var b = document.getElementById('supf-'+k);
+    b.style.background = k === f ? 'var(--accent)' : 'none';
+    b.style.color      = k === f ? '#fff' : 'var(--text-dim)';
+  });
+  renderSupportList();
+}
+
+function renderSupportList() {
+  var list = document.getElementById('supportList');
+  if (!list) return;
+  var rows = _chatDocs.filter(function(c){ return (c.status||'open') === _supportFilter; });
+  if (!rows.length) {
+    list.innerHTML = '<div style="text-align:center;padding:36px 16px;color:var(--text-dim);font-size:14px;">No '+_supportFilter+' conversations.</div>';
+    return;
+  }
+  list.innerHTML = rows.map(function(c) {
+    var who  = c.isGuest ? 'Guest visitor' : (c.userName || 'User');
+    var sub  = c.isGuest ? ('Anonymous · ' + c.id.slice(0,8) + '…') : [c.accountId, c.userEmail].filter(Boolean).join(' · ');
+    var page = supPage(c.originUrl);
+    var unreadBadge = c.unreadByAdmin
+      ? '<span style="background:#f2496b;color:#fff;border-radius:99px;font-size:11px;font-weight:800;padding:2px 8px;">'+supEsc((c.unreadCount||1)+' new')+'</span>'
+      : '';
+    return '<div data-id="'+supEsc(c.id)+'" onclick="openChatThread(this.dataset.id)" style="cursor:pointer;background:var(--surface);border:1px solid '+(c.unreadByAdmin?'var(--accent)':'var(--border)')+';border-radius:14px;padding:14px 16px;">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px;">'+
+        '<strong style="font-size:14.5px;color:var(--text);">'+supEsc(who)+'</strong>'+
+        '<span style="display:flex;align-items:center;gap:8px;flex-shrink:0;">'+unreadBadge+'<span style="font-size:11.5px;color:var(--text-faint);">'+supEsc(supAgo(c.lastMessageAt))+'</span></span>'+
+      '</div>'+
+      '<div style="font-size:12px;color:var(--text-faint);margin-bottom:6px;word-break:break-all;">'+supEsc(sub)+(page?' · started on '+supEsc(page):'')+'</div>'+
+      '<div style="font-size:13px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+supEsc(c.lastMessage || 'No messages yet')+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+function updateChatModalHeader() {
+  var c = _chatDocs.find(function(x){ return x.id === _openChatId; });
+  if (!c) return;
+  document.getElementById('chatModalName').textContent = c.isGuest ? 'Guest visitor' : (c.userName || 'User');
+  var sub = c.isGuest ? ('Anonymous · ' + c.id) : [c.accountId, c.userEmail].filter(Boolean).join(' · ');
+  var page = supPage(c.originUrl);
+  document.getElementById('chatModalSub').textContent = sub + (page ? ' · started on ' + page : '');
+  document.getElementById('chatToggleStatusBtn').textContent = (c.status||'open') === 'open' ? 'Close conversation' : 'Reopen conversation';
+}
+
+async function markChatRead(id) {
+  var c = _chatDocs.find(function(x){ return x.id === id; });
+  if (c && !c.unreadByAdmin) return;
+  try { await db.collection('chats').doc(id).update({ unreadByAdmin: false, unreadCount: 0 }); }
+  catch(e) { console.warn('markChatRead failed:', e.message); }
+}
+
+function openChatThread(id) {
+  _openChatId = id;
+  updateChatModalHeader();
+  document.getElementById('chatModal').classList.add('open');
+  document.getElementById('chatReplyInput').value = '';
+  if (_threadUnsub) _threadUnsub();
+  var thread = document.getElementById('chatThread');
+  thread.innerHTML = '';
+  _threadUnsub = db.collection('chats').doc(id).collection('messages').orderBy('timestamp','asc').onSnapshot(function(snap) {
+    thread.innerHTML = snap.docs.map(function(d) {
+      var m = d.data(), mine = m.sender === 'admin';
+      var label = m.sender === 'bot' ? 'Bot' : m.sender === 'user' ? 'Visitor' : 'You';
+      return '<div style="max-width:82%;align-self:'+(mine?'flex-end':'flex-start')+';background:'+(mine?'var(--accent)':'var(--bg)')+';color:'+(mine?'#fff':'var(--text)')+';border:1px solid '+(mine?'var(--accent)':'var(--border)')+';border-radius:14px;padding:9px 13px;font-size:13.5px;line-height:1.45;word-wrap:break-word;">'+
+        '<span style="display:block;font-size:10px;font-weight:700;opacity:.7;margin-bottom:3px;">'+label+'</span>'+supEsc(m.text)+'</div>';
+    }).join('');
+    thread.scrollTop = thread.scrollHeight;
+    // Admin is looking at this thread, so anything arriving now counts as read
+    if (_openChatId === id) markChatRead(id);
+  }, function(e) { console.warn('Thread listener error:', e.message); });
+  markChatRead(id);
+}
+
+function closeChatThread() {
+  document.getElementById('chatModal').classList.remove('open');
+  if (_threadUnsub) { _threadUnsub(); _threadUnsub = null; }
+  _openChatId = null;
+}
+
+async function sendAdminReply() {
+  var input = document.getElementById('chatReplyInput');
+  var text = input.value.trim();
+  if (!text || !_openChatId) return;
+  input.value = '';
+  var ref = db.collection('chats').doc(_openChatId);
+  try {
+    await ref.collection('messages').add({ text: text, sender: 'admin', timestamp: firebase.firestore.FieldValue.serverTimestamp(), read: false });
+    await ref.update({
+      lastMessage:   text,
+      lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+      unreadByAdmin: false,
+      unreadCount:   0,
+      unreadByUser:  true,
+      status:        'open'
+    });
+  } catch(e) { showToast('Failed to send reply: ' + e.message, 'err'); }
+}
+
+async function toggleChatStatus() {
+  var c = _chatDocs.find(function(x){ return x.id === _openChatId; });
+  if (!c) return;
+  var next = (c.status||'open') === 'open' ? 'closed' : 'open';
+  try {
+    await db.collection('chats').doc(_openChatId).update({ status: next });
+    showToast('Conversation ' + (next === 'closed' ? 'closed.' : 'reopened.'));
+    if (next === 'closed') closeChatThread();
+  } catch(e) { showToast('Failed to update conversation: ' + e.message, 'err'); }
+}
+
 // Guard — must be admin
 auth.onAuthStateChanged(async function(user) {
   if (!user) { location.href = 'login.html'; return; }
@@ -943,7 +1132,7 @@ auth.onAuthStateChanged(async function(user) {
     adminUser = user;
     predictionEngine.start();
     document.getElementById('adminEmailLabel').textContent = user.email || '';
-    if (typeof smartsupp === 'function') { smartsupp('name', 'Admin'); smartsupp('email', user.email||''); }
+    startSupportInbox();
     document.getElementById('loader').style.display = 'none';
     document.getElementById('adminShell').style.display = 'block';
     loadOverview();
@@ -1025,20 +1214,6 @@ auth.onAuthStateChanged(async function(user) {
     </div>
   </div>
 </div>
-
-<!-- Smartsupp Live Chat -->
-<script type="text/javascript">
-var _smartsupp = _smartsupp || {};
-_smartsupp.key = 'e074775f8766e30f72a60b6941af184692c32fe1';
-window.smartsupp||(function(d) {
-  var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
-  s=d.getElementsByTagName('script')[0];
-  c=d.createElement('script');
-  c.type='text/javascript';c.charset='utf-8';c.async=true;
-  c.src='https://www.smartsuppchat.com/loader.js?';
-  s.parentNode.insertBefore(c,s);
-})(document);
-</script>
 
 <script>
 // Close profile dropdown when clicking outside

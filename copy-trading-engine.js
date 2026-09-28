@@ -4,7 +4,10 @@
  * Ten expert traders with hidden personalities, Forex and Commodities only
  * (never Crypto — those prices are real and unpredictable). Each trader
  * fires on a per-trader timer, in pairs of up to 2 trades at a time, with
- * an interval between pairs derived from the admin-configured daily cap.
+ * an interval between pairs derived from the FOLLOWING USER's own
+ * copyMaxTrades setting (per-user config, set in admin.html's Copy Trading
+ * Config tab — separate from Copy Betting's config). Re-read fresh on every
+ * tick so admin changes take effect on the user's very next trade.
  * Users follow ONE trader at a time. Trades write to the same `trades`
  * collection as manual trading for the current signed-in user only — no
  * cross-user reads, respecting Firestore security rules. TP/SL closing and
@@ -51,50 +54,18 @@
   var _traderTimers = {};   // { traderId: timerHandle }
   var _started       = false;
   var _prices         = {};
-  var _settings        = { maxTradesPerDay:6, riskPercent:10, rrRatio:1 }; // defaults, overridden by settings/copyTrading
+  var DEFAULT_DELAY   = 60000 + Math.random() * 60000; // fallback when no one's actively following
 
   function todayUTC() {
     var d = new Date();
     return d.getUTCFullYear()+'-'+(d.getUTCMonth()+1)+'-'+d.getUTCDate();
   }
 
-  // ── Load / refresh admin-configured settings ────────────────────────────────
-  async function loadSettings() {
-    try {
-      var snap = await db.collection('settings').doc('copyTrading').get();
-      if (snap.exists) {
-        var d = snap.data();
-        _settings = {
-          maxTradesPerDay: typeof d.maxTradesPerDay === 'number' ? d.maxTradesPerDay : 6,
-          riskPercent:     typeof d.riskPercent     === 'number' ? d.riskPercent     : 10,
-          rrRatio:         typeof d.rrRatio         === 'number' ? d.rrRatio         : 1
-        };
-      }
-    } catch(e) { console.warn('[copy-trading] loadSettings failed:', e.message); }
-  }
-  function scheduleSettingsRefresh() {
-    setTimeout(function() { loadSettings().then(scheduleSettingsRefresh); }, 5 * 60 * 1000);
-  }
-
-  // ── Mirror a trade to the current signed-in user ────────────────────────────
-  async function mirrorTradeToUser(trader) {
+  // ── Fire a single trade for the current user, using their own config ───────
+  async function mirrorTradeToUser(trader, riskPct, rrRatio) {
     var currentUser = auth.currentUser;
     if (!currentUser) return false;
-    if (!isMarketOpen()) return false; // Forex/Commodity markets closed — never fire
-
-    var today = todayUTC();
     try {
-      var ctSnap = await db.collection('copyTrading').doc(currentUser.uid).get();
-      if (!ctSnap.exists || ctSnap.data().status !== 'active') return false;
-      if (ctSnap.data().traderId !== trader.id) return false; // following a different trader
-
-      var ct = ctSnap.data();
-      if (ct.lastResetDate !== today) {
-        await db.collection('copyTrading').doc(currentUser.uid).update({ tradesToday: 0, lastResetDate: today });
-        ct.tradesToday = 0;
-      }
-      if ((ct.tradesToday || 0) >= _settings.maxTradesPerDay) return false;
-
       var uSnap = await db.collection('users').doc(currentUser.uid).get();
       if (!uSnap.exists) return false;
       var balance = uSnap.data().balance || 0;
@@ -121,8 +92,8 @@
 
       var isCommodity = COMMODITY_SYMS.indexOf(chosen) !== -1;
       var slDist = SL_DIST[chosen] || 0.0010;
-      var tpDist = slDist * _settings.rrRatio;
-      var targetLoss = balance * (_settings.riskPercent / 100);
+      var tpDist = slDist * rrRatio;
+      var targetLoss = balance * (riskPct / 100);
       var multiplier = chosen.indexOf('JPY') !== -1 ? 100 : isCommodity ? 1 : 10000;
       var lotSize = parseFloat((targetLoss / (slDist * multiplier)).toFixed(4));
       if (!lotSize || lotSize <= 0) lotSize = 0.01;
@@ -149,7 +120,7 @@
       });
       await db.collection('copyTrading').doc(currentUser.uid).update({
         tradesToday:   firebase.firestore.FieldValue.increment(1),
-        lastResetDate: today
+        lastResetDate: todayUTC()
       });
       console.log('[copy-trading] mirrored', tradeType, chosen, 'for', currentUser.uid, 'via', trader.name);
       return true;
@@ -159,22 +130,58 @@
     }
   }
 
-  // ── Trader tick — fires a pair (up to 2 trades) ─────────────────────────────
+  // ── Trader tick — checks the current user's own per-user config fresh each
+  // time (mirrors NexTrade's "re-read in case admin changed it" pattern), fires
+  // a pair if there's headroom, and returns the delay to use for the next tick. ──
   async function traderTick(trader) {
-    await mirrorTradeToUser(trader);
-    await mirrorTradeToUser(trader);
+    var currentUser = auth.currentUser;
+    if (!currentUser) return null; // nobody signed in — use default delay
+
+    try {
+      var ctSnap = await db.collection('copyTrading').doc(currentUser.uid).get();
+      if (!ctSnap.exists || ctSnap.data().status !== 'active' || ctSnap.data().traderId !== trader.id) {
+        return null; // not following this trader — use default delay
+      }
+      var ct = ctSnap.data();
+      var today = todayUTC();
+      if (ct.lastResetDate !== today) {
+        await db.collection('copyTrading').doc(currentUser.uid).update({ tradesToday: 0, lastResetDate: today });
+        ct.tradesToday = 0;
+      }
+
+      var uSnap = await db.collection('users').doc(currentUser.uid).get();
+      var ud = uSnap.exists ? uSnap.data() : {};
+      var maxTrades = typeof ud.copyMaxTrades === 'number' ? ud.copyMaxTrades : 5;
+      var riskPct   = typeof ud.copyRisk      === 'number' ? ud.copyRisk      : 10;
+      var rrRatio   = typeof ud.copyRR        === 'number' ? ud.copyRR        : 1;
+
+      var pairInterval = Math.floor((24 * 60 * 60 * 1000) / Math.ceil(maxTrades / 2));
+      var remaining = maxTrades - (ct.tradesToday || 0);
+
+      if (remaining > 0 && isMarketOpen()) {
+        var toFire = Math.min(2, remaining);
+        for (var i = 0; i < toFire; i++) {
+          await mirrorTradeToUser(trader, riskPct, rrRatio);
+        }
+      }
+
+      var jitter = (Math.random() - 0.5) * pairInterval * 0.4;
+      return Math.max(pairInterval + jitter, 60000);
+    } catch(e) {
+      console.warn('[copy-trading] traderTick error:', e.message);
+      return null;
+    }
   }
 
   // ── Schedule each trader's clock ─────────────────────────────────────────────
-  function scheduleTrader(trader) {
+  function scheduleTrader(trader, delay) {
     if (_traderTimers[trader.id]) return;
-    var pairInterval = Math.floor((24 * 60 * 60 * 1000) / Math.ceil(_settings.maxTradesPerDay / 2));
-    var jitter = (Math.random() - 0.5) * pairInterval * 0.4;
-    var delay  = Math.max(pairInterval + jitter, 60000);
     _traderTimers[trader.id] = setTimeout(function () {
       _traderTimers[trader.id] = null;
-      traderTick(trader).then(function () { scheduleTrader(trader); });
-    }, delay);
+      traderTick(trader).then(function (nextDelay) {
+        scheduleTrader(trader, nextDelay || DEFAULT_DELAY);
+      });
+    }, delay || DEFAULT_DELAY);
   }
 
   // ── Public API ─────────────────────────────────────────────────────────────
@@ -183,11 +190,9 @@
     start: async function () {
       if (_started) return;
       _started = true;
-      await loadSettings();
       await loadLivePrices(_prices);
       startPriceRefresh(_prices, function(){});
       TRADERS.forEach(function(t) { scheduleTrader(t); });
-      scheduleSettingsRefresh();
       console.log('[copy-trading] engine started with', TRADERS.length, 'traders');
     },
 
