@@ -304,6 +304,10 @@
 var currentUser = null, userData = null;
 var prices = {};
 var selectedSymbol = 'EUR/USD';
+(function(){
+  var qs = new URLSearchParams(window.location.search).get('symbol');
+  if (qs && getInstrument(qs)) selectedSymbol = qs;
+})();
 var tradeType = 'BUY';
 var currentCategory = 'all';
 

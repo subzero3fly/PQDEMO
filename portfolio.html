@@ -26,19 +26,6 @@
     </div>
   </div>
 
-  <nav class="category-nav" aria-label="Categories">
-    <a href="index.html">Trending</a>
-    <a href="breaking.html">Breaking</a>
-    <a href="#">Politics</a>
-    <a href="#">Sports</a>
-    <a href="#">Esports</a>
-    <a href="#">Iran</a>
-    <a href="#">Finance</a>
-    <a href="#">Geopolitics</a>
-    <a href="#">Tech</a>
-    <a href="#">Culture</a>
-    <a href="#">Economy</a>
-  </nav>
 </header>
 
 <main>
@@ -335,6 +322,7 @@ function showToast(msg, type) { pToast(msg, type); }
 // Only starts polling live prices if the user actually has an open trade —
 // no point loading CoinGecko/Frankfurter/GoldAPI for someone who's never traded.
 var tradePrices = {};
+var openTrades  = []; // cache of the user's open trades, for blending into Positions/Open
 async function startTradeMonitoring() {
   try {
     var openSnap = await db.collection('trades').where('userId','==',portUser.uid).where('status','==','open').get();
@@ -349,7 +337,7 @@ async function runTradeChecks() {
   try {
     var snap = await db.collection('trades').where('userId','==',portUser.uid).where('status','==','open').get();
     var open = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
-    if (!open.length) return;
+    if (!open.length) { openTrades = []; return; }
 
     var closed = await checkTpSl(portUser.uid, open, tradePrices);
     if (closed.length) {
@@ -359,13 +347,17 @@ async function runTradeChecks() {
       if (wdAvl) wdAvl.textContent = pFmt(portUserData.balance||0);
       populateSummary(portUserData, allPositions);
     }
+    openTrades = open;
+    refreshPanels(allPositions);
     if (!open.length) return;
 
     await checkStopOut(portUser.uid, portUserData.balance, open, tradePrices, function() {
       portUserData.balance = 0;
+      openTrades = [];
       var wdAvl2 = document.getElementById('wdAvail');
       if (wdAvl2) wdAvl2.textContent = pFmt(0);
       populateSummary(portUserData, allPositions);
+      refreshPanels(allPositions);
       document.getElementById('stopOutModal').style.display = 'flex';
     });
   } catch(e) { console.warn('Trade check error:', e); }
@@ -404,9 +396,10 @@ auth.onAuthStateChanged(async function(user) {
     if (typeof populateDesktopDrawer === 'function') populateDesktopDrawer(portUserData);
 
     // Load positions and populate portfolio
-    var [manSnap, cpSnap] = await Promise.all([
+    var [manSnap, cpSnap, otSnap] = await Promise.all([
       db.collection('positions').where('userId','==',user.uid).get(),
-      db.collection('copyPositions').where('userId','==',user.uid).get()
+      db.collection('copyPositions').where('userId','==',user.uid).get(),
+      db.collection('trades').where('userId','==',user.uid).where('status','==','open').get()
     ]);
 
     allPositions = [
@@ -415,6 +408,8 @@ auth.onAuthStateChanged(async function(user) {
     ].sort(function(a,b){
       return ((b.createdAt&&b.createdAt.seconds)||0)-((a.createdAt&&a.createdAt.seconds)||0);
     });
+    openTrades = otSnap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+    if (openTrades.length) { try { await loadLivePrices(tradePrices); } catch(e) { console.warn('Trade price load error:', e); } }
 
     populateSummary(portUserData, allPositions);
     buildPnlChart(allPositions, 'r-1d');
@@ -655,6 +650,31 @@ async function getQuestion(marketId) {
   return qCache[marketId];
 }
 
+function emptyPositionsHTML() {
+  return '<div class="empty-state"><svg class="icon-lg" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="15" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M3 10h18" stroke="currentColor" stroke-width="1.4"/></svg><p>No positions yet. <a href="index.html" style="color:var(--accent);">Browse markets</a></p></div>';
+}
+
+function tradeOpenRowHTML(t) {
+  var isBuy = t.type === 'BUY';
+  var cur   = tradePrices[t.symbol] || t.entryPrice;
+  var pnl   = (typeof calcPnL === 'function') ? calcPnL(t, cur) : 0;
+  var pnlPositive = pnl >= 0;
+  var copyBadge = t.isCopyTrade ? '<span style="font-size:10px;background:var(--accent-soft,rgba(124,92,255,.14));color:var(--accent-bright,#9c83ff);border-radius:99px;padding:1px 6px;margin-left:6px;">Copy</span>' : '';
+  var ts = t.openedAt ? (t.openedAt.toDate ? t.openedAt.toDate() : new Date(t.openedAt)) : null;
+  var dateStr = ts ? ts.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '—';
+  return '<a href="trade.html" style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);text-decoration:none;">'+
+    '<div style="width:36px;height:36px;border-radius:8px;background:'+(isBuy?'rgba(31,209,124,.13)':'rgba(242,73,107,.13)')+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:'+(isBuy?'var(--yes)':'var(--no)')+';flex-shrink:0;">'+t.type+'</div>'+
+    '<div style="flex:1;min-width:0;">'+
+      '<div style="font-size:13.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+t.symbol+copyBadge+'</div>'+
+      '<div style="font-size:12px;color:var(--text-faint);margin-top:2px;">Lot '+t.lotSize+' · Entry '+t.entryPrice+' · '+dateStr+'</div>'+
+    '</div>'+
+    '<div style="text-align:right;flex-shrink:0;">'+
+      '<div style="font-size:13.5px;font-weight:700;color:'+(pnlPositive?'var(--yes)':'var(--no)')+';">'+(pnlPositive?'+':'')+pFmt(pnl)+'</div>'+
+      '<span style="font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--accent-soft,rgba(124,92,255,.14));color:var(--accent-bright,#9c83ff);">Open</span>'+
+    '</div>'+
+  '</a>';
+}
+
 function posRowHTML(p, question) {
   var sideClass  = p.side==='YES'?'yes':'no';
   var statusMap  = {open:'open',won:'won',lost:'lost'};
@@ -682,7 +702,7 @@ function posRowHTML(p, question) {
 }
 
 async function renderPositions(positions) {
-  if (!positions.length) return '<div class="empty-state"><svg class="icon-lg" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="15" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M3 10h18" stroke="currentColor" stroke-width="1.4"/></svg><p>No positions yet. <a href="index.html" style="color:var(--accent);">Browse markets</a></p></div>';
+  if (!positions.length) return emptyPositionsHTML();
   var mids = [...new Set(positions.map(function(p){return p.marketId;}).filter(Boolean))];
   var chunks = [];
   for (var i=0;i<mids.length;i+=10) chunks.push(mids.slice(i,i+10));
@@ -711,8 +731,15 @@ async function refreshPanels(positions) {
   var pPanel  = document.getElementById('panelPositions');
   var oPanel  = document.getElementById('panelOpen');
   var hPanel  = document.getElementById('historyPredictions');
-  if (pPanel) pPanel.innerHTML = await renderPositions(positions);
-  if (oPanel) oPanel.innerHTML = await renderPositions(open);
+  var tradesHTML = openTrades.map(tradeOpenRowHTML).join('');
+  if (pPanel) {
+    var predHTML = positions.length ? await renderPositions(positions) : '';
+    pPanel.innerHTML = (tradesHTML + predHTML) || emptyPositionsHTML();
+  }
+  if (oPanel) {
+    var openPredHTML = open.length ? await renderPositions(open) : '';
+    oPanel.innerHTML = (tradesHTML + openPredHTML) || emptyPositionsHTML();
+  }
   if (hPanel) hPanel.innerHTML = await renderPositions(settled);
 }
 

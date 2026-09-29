@@ -5,6 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PredictIQ — Search</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  .search-tabs { display:flex; gap:8px; margin:14px 0 4px; background:var(--surface-2); border-radius:99px; padding:4px; }
+  .search-tab-btn { flex:1; padding:10px 0; border-radius:99px; border:none; background:none; color:var(--text-dim); font-size:13.5px; font-weight:700; cursor:pointer; font-family:inherit; transition:all .15s; }
+  .search-tab-btn.active { background:var(--accent,#7c5cff); color:#fff; }
+  .search-tab-panel { display:none; }
+  .search-tab-panel.active { display:block; }
+
+  .instr-cat-tabs { display:flex; gap:8px; margin:16px 0 4px; overflow-x:auto; scrollbar-width:none; }
+  .instr-cat-tabs::-webkit-scrollbar { display:none; }
+  .instr-cat-tab { flex-shrink:0; padding:7px 16px; border-radius:99px; border:1.5px solid var(--border); background:var(--surface-2); font-size:13px; font-weight:700; cursor:pointer; color:var(--text-dim); font-family:inherit; }
+  .instr-cat-tab.active { background:var(--accent,#7c5cff); border-color:var(--accent,#7c5cff); color:#fff; }
+
+  .instr-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; margin-top:12px; }
+  .instr-card { display:block; text-decoration:none; background:var(--surface); border:1.5px solid var(--border-soft); border-radius:var(--radius-sm); padding:12px; transition:border-color .15s; }
+  .instr-card:hover { border-color:var(--accent,#7c5cff); }
+  .instr-card .sym  { font-size:13.5px; font-weight:700; color:var(--text); }
+  .instr-card .name { font-size:11px; color:var(--text-faint); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .instr-card .prc  { font-size:12.5px; color:var(--text-dim); margin-top:6px; font-family:var(--font-mono); }
+</style>
 </head>
 <body>
 
@@ -27,6 +46,13 @@
 </header>
 
 <main class="page">
+
+  <div class="search-tabs">
+    <button class="search-tab-btn active" id="searchTabMarkets" onclick="switchSearchTab('markets')">Markets</button>
+    <button class="search-tab-btn" id="searchTabTrade" onclick="switchSearchTab('trade')">Trade</button>
+  </div>
+
+  <div class="search-tab-panel active" id="marketsPanel">
 
   <!-- Search results (shown when user types) -->
   <div id="searchResultsWrap" style="display:none;margin-top:14px;">
@@ -120,9 +146,34 @@
     </a>
   </div>
 
-</main>
-
   </div><!-- /browseWrap -->
+
+  </div><!-- /marketsPanel -->
+
+  <div class="search-tab-panel" id="tradePanel">
+
+    <div id="instrResultsWrap" style="display:none;margin-top:8px;">
+      <div class="eyebrow" id="instrResultsLabel">Results</div>
+      <div class="instr-grid" id="instrResultsGrid"></div>
+      <div id="instrNoResults" style="display:none;text-align:center;padding:40px 20px;color:var(--text-faint);">
+        <p style="font-size:15px;font-weight:600;margin-bottom:6px;">No instruments found</p>
+        <p style="font-size:13.5px;">Try a symbol like EUR/USD or BTC/USD.</p>
+      </div>
+    </div>
+
+    <div id="instrBrowseWrap">
+      <div class="instr-cat-tabs">
+        <button class="instr-cat-tab active" onclick="filterInstrCategory('all',this)">All</button>
+        <button class="instr-cat-tab" onclick="filterInstrCategory('forex',this)">Forex</button>
+        <button class="instr-cat-tab" onclick="filterInstrCategory('commodities',this)">Commodities</button>
+        <button class="instr-cat-tab" onclick="filterInstrCategory('crypto',this)">Crypto</button>
+      </div>
+      <div class="instr-grid" id="instrBrowseGrid"></div>
+    </div>
+
+  </div><!-- /tradePanel -->
+
+</main>
 
 <nav class="tab-bar" aria-label="Primary">
   <a href="index.html">
@@ -168,6 +219,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script src="prediction-engine.js"></script>
+<script src="trading-engine.js"></script>
 <script>
 function fmtBal(n) {
   return '$' + (parseFloat(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -303,6 +355,7 @@ function renderResults(list, label) {
 }
 
 function onSearchInput(val) {
+  if (currentSearchTab === 'trade') { onInstrumentSearchInput(val); return; }
   var wrap   = document.getElementById('searchResultsWrap');
   var browse = document.getElementById('browseWrap');
   val = val.trim().toLowerCase();
@@ -343,6 +396,55 @@ function goTopic(e, cat) {
   document.getElementById('searchInput').value = cat.charAt(0).toUpperCase()+cat.slice(1);
   renderResults(sortMarkets(matches, currentSort), cat.charAt(0).toUpperCase()+cat.slice(1)+' Markets');
 }
+
+// ── Markets / Trade tab switch ──────────────────────────────────────────────
+var currentSearchTab = 'markets';
+function switchSearchTab(tab) {
+  currentSearchTab = tab;
+  document.getElementById('searchTabMarkets').classList.toggle('active', tab==='markets');
+  document.getElementById('searchTabTrade').classList.toggle('active', tab==='trade');
+  document.getElementById('marketsPanel').classList.toggle('active', tab==='markets');
+  document.getElementById('tradePanel').classList.toggle('active', tab==='trade');
+  var input = document.getElementById('searchInput');
+  input.placeholder = tab==='trade' ? 'Search instruments (EUR/USD, BTC/USD)…' : 'Search PredictIQ markets…';
+  onSearchInput(input.value); // re-run current query against whichever tab is now active
+}
+
+// ── Trade instrument search (Forex/Commodities/Crypto — static reference prices) ──
+function buildInstrumentCard(i) {
+  return '<a class="instr-card" href="trade.html?symbol='+encodeURIComponent(i.symbol)+'">'+
+    '<div class="sym">'+i.symbol+'</div>'+
+    '<div class="name">'+i.name+'</div>'+
+    '<div class="prc">'+fmtPrice(i.defaultPrice, i.symbol)+'</div>'+
+  '</a>';
+}
+function renderInstrResults(list, label) {
+  var grid  = document.getElementById('instrResultsGrid');
+  var noRes = document.getElementById('instrNoResults');
+  document.getElementById('instrResultsLabel').textContent = label || 'Results';
+  if (!list.length) { grid.innerHTML=''; noRes.style.display='block'; return; }
+  noRes.style.display = 'none';
+  grid.innerHTML = list.map(buildInstrumentCard).join('');
+}
+function onInstrumentSearchInput(val) {
+  var wrap   = document.getElementById('instrResultsWrap');
+  var browse = document.getElementById('instrBrowseWrap');
+  val = val.trim().toLowerCase();
+  if (!val) { wrap.style.display='none'; browse.style.display='block'; return; }
+  wrap.style.display   = 'block';
+  browse.style.display = 'none';
+  var matches = ALL_INSTRUMENTS.filter(function(i){
+    return i.symbol.toLowerCase().indexOf(val)>=0 || i.name.toLowerCase().indexOf(val)>=0;
+  });
+  renderInstrResults(matches, 'Results for "'+val.slice(0,30)+'"');
+}
+function filterInstrCategory(cat, btn) {
+  document.querySelectorAll('.instr-cat-tab').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  var list = cat==='forex' ? INSTRUMENTS.forex : cat==='commodities' ? INSTRUMENTS.commodities : cat==='crypto' ? INSTRUMENTS.crypto : ALL_INSTRUMENTS;
+  document.getElementById('instrBrowseGrid').innerHTML = list.map(buildInstrumentCard).join('');
+}
+filterInstrCategory('all', document.querySelector('.instr-cat-tab'));
 
 // Load markets once on page load
 db.collection('markets').where('status','==','active').get().then(function(snap){
