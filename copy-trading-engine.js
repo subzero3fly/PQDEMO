@@ -28,16 +28,12 @@
 
   // ── Trader profiles — ported from NexTrade's COPY_TRADERS, Forex/Commodity only ──
   var TRADERS = [
-    { id:'trader_marcus',   name:'Marcus Elliot',     style:'Trend Following', wr:0.87, bias:{ 'EUR/USD':0.6, 'GBP/USD':0.5, 'USD/JPY':0.4 } },
-    { id:'trader_sophia',   name:'Sophia Chen',       style:'Mixed Strategy',  wr:0.82, bias:{ 'EUR/USD':0.5, 'XAU/USD':0.4, 'GBP/USD':0.3 } },
-    { id:'trader_micheal',  name:'Micheal Robertson', style:'Scalping',        wr:0.79, bias:{ 'GBP/USD':0.7, 'USD/JPY':0.6, 'AUD/USD':0.4 } },
-    { id:'trader_lena',     name:'Lena Hartmann',     style:'Swing Trading',   wr:0.84, bias:{ 'EUR/GBP':0.6, 'USD/CHF':0.5, 'NZD/USD':0.4 } },
-    { id:'trader_rafael',   name:'Rafael Torres',     style:'Breakout',        wr:0.76, bias:{ 'XAU/USD':0.7, 'WTI/USD':0.6, 'XAG/USD':0.5 } },
-    { id:'trader_kirk',     name:'Kirk Bonde',        style:'Trend Following', wr:0.91, bias:{ 'EUR/USD':0.7, 'USD/CHF':0.6, 'EUR/GBP':0.5 } },
-    { id:'trader_dmitri',   name:'Dmitri Volkov',     style:'Algorithmic',     wr:0.88, bias:{ 'USD/JPY':0.7, 'USD/CAD':0.6, 'AUD/USD':0.5 } },
-    { id:'trader_priya',    name:'Priya Nair',        style:'Commodities',     wr:0.80, bias:{ 'XAU/USD':0.8, 'XAG/USD':0.7, 'XPT/USD':0.5 } },
-    { id:'trader_carlos',   name:'Carlos Mendez',     style:'News-Driven',     wr:0.74, bias:{ 'GBP/USD':0.6, 'WTI/USD':0.5, 'USD/CAD':0.4 } },
-    { id:'trader_isabelle', name:'Isabelle Fontaine', style:'Conservative',    wr:0.93, bias:{ 'EUR/USD':0.8, 'EUR/GBP':0.7, 'USD/CHF':0.6 } }
+    { id:'trader_marcus',   name:'Marcus Elliot',     style:'Trend Following', wr:0.87, bias:{ 'EUR/USD':0.6, 'GBP/USD':0.5, 'USD/JPY':0.4 }, isAI:false },
+    { id:'trader_lena',     name:'Lena Hartmann',     style:'Swing Trading',   wr:0.84, bias:{ 'EUR/GBP':0.6, 'USD/CHF':0.5, 'NZD/USD':0.4 }, isAI:false },
+    { id:'trader_rafael',   name:'Rafael Torres',     style:'Breakout',        wr:0.76, bias:{ 'XAU/USD':0.7, 'WTI/USD':0.6, 'XAG/USD':0.5 }, isAI:false },
+    { id:'trader_kirk',     name:'Kirk Bonde',        style:'Trend Following', wr:0.91, bias:{ 'EUR/USD':0.7, 'USD/CHF':0.6, 'EUR/GBP':0.5 }, isAI:false },
+    { id:'trader_isabelle', name:'Isabelle Fontaine', style:'Conservative',    wr:0.93, bias:{ 'EUR/USD':0.8, 'EUR/GBP':0.7, 'USD/CHF':0.6 }, isAI:false },
+    { id:'trader_nexus',    name:'Nexus',             style:'Algorithmic',     wr:0.90, bias:{ 'EUR/USD':0.3, 'GBP/USD':0.3, 'USD/JPY':0.3, 'AUD/USD':0.3, 'USD/CAD':0.3, 'XAU/USD':0.3, 'XAG/USD':0.3, 'WTI/USD':0.3 }, isAI:true }
   ];
 
   // SL distances tuned for a few minutes of simulated movement — Forex/Commodity only.
@@ -205,7 +201,7 @@
       console.log('[copy-trading] stopped');
     },
 
-    getTraders: function () { return TRADERS.map(function(t){ return { id:t.id, name:t.name, style:t.style }; }); },
+    getTraders: function () { return TRADERS.map(function(t){ return { id:t.id, name:t.name, style:t.style, isAI:!!t.isAI }; }); },
 
     /**
      * Call when user starts following a trader — fires one immediate pair

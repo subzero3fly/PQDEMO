@@ -275,30 +275,24 @@ var activeTraderId = null;  // traderId currently being followed (trading)
 var pendingTrader  = null;  // trader awaiting confirmation
 
 var EXPERT_META = {
-  expert_aria:    { tag:'Politics & News Analyst',      color:'#7c5cff' },
-  expert_marco:   { tag:'Sports & Entertainment',        color:'#3b82f6' },
-  expert_priya:   { tag:'Crypto & Finance Forecaster',  color:'#f59e0b' },
-  expert_tobias:  { tag:'Sports & Politics Predictor',  color:'#ef4444' },
-  expert_celeste: { tag:'Politics & Culture Expert',    color:'#8b5cf6' },
-  expert_jin:     { tag:'Crypto & Sports Analyst',      color:'#10b981' },
-  expert_soren:   { tag:'Finance & Economy Strategist', color:'#f97316' },
-  expert_fatima:  { tag:'Culture & Geopolitics Expert', color:'#06b6d4' },
-  expert_dmitri:  { tag:'Crypto & Geopolitics',         color:'#ec4899' },
-  expert_lena:    { tag:'Sports & Economy Analyst',     color:'#84cc16' }
+  expert_aria:   { tag:'Politics & News Analyst',    color:'#7c5cff' },
+  expert_marco:  { tag:'Sports & Entertainment',     color:'#3b82f6' },
+  expert_tobias: { tag:'Sports & Politics Predictor', color:'#ef4444' },
+  expert_jin:    { tag:'Crypto & Sports Analyst',    color:'#10b981' },
+  expert_lena:   { tag:'Sports & Economy Analyst',   color:'#84cc16' },
+  expert_axiom:  { tag:'AI Model — All Categories',  color:'#06b6d4' }
 };
 
 var TRADER_META = {
   trader_marcus:   { color:'#7c5cff' },
-  trader_sophia:   { color:'#3b82f6' },
-  trader_micheal:  { color:'#f59e0b' },
   trader_lena:     { color:'#ef4444' },
   trader_rafael:   { color:'#8b5cf6' },
   trader_kirk:     { color:'#10b981' },
-  trader_dmitri:   { color:'#f97316' },
-  trader_priya:    { color:'#06b6d4' },
-  trader_carlos:   { color:'#ec4899' },
-  trader_isabelle: { color:'#84cc16' }
+  trader_isabelle: { color:'#84cc16' },
+  trader_nexus:    { color:'#06b6d4' }
 };
+
+var AI_AVATAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;"><rect x="4" y="8" width="16" height="12" rx="2"/><circle cx="9" cy="14" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.4" fill="currentColor" stroke="none"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1"/><path d="M4 13H2M22 13h-2"/></svg>';
 
 function switchCopyTab(tab) {
   document.getElementById('copyTabBettingBtn').classList.toggle('active', tab==='betting');
@@ -331,11 +325,12 @@ function renderExperts() {
     var initials = e.name.split(' ').map(function(w){ return w[0]; }).join('').slice(0,2);
     var isActive = activeCopyId === e.id;
     var isTop    = e.winRate >= 0.87;
+    var avatarContent = e.isAI ? AI_AVATAR_SVG : initials;
     return '<div class="expert-card">'+
       '<div class="expert-head">'+
-        '<div class="expert-avatar" style="background:'+meta.color+'cc;">'+initials+'</div>'+
+        '<div class="expert-avatar" style="background:'+meta.color+'cc;display:flex;align-items:center;justify-content:center;">'+avatarContent+'</div>'+
         '<div>'+
-          '<span class="expert-name">'+e.name+(isTop?'<span class="expert-badge">Top</span>':'')+'</span>'+
+          '<span class="expert-name">'+e.name+(e.isAI?'<span class="expert-badge" style="background:rgba(6,182,212,.16);color:#06b6d4;border-color:rgba(6,182,212,.3);">AI</span>':isTop?'<span class="expert-badge">Top</span>':'')+'</span>'+
           '<span class="expert-tag">'+meta.tag+'</span>'+
         '</div>'+
       '</div>'+
@@ -363,11 +358,12 @@ function renderTraders() {
     var meta     = TRADER_META[t.id] || {color:'var(--accent)'};
     var initials = t.name.split(' ').map(function(w){ return w[0]; }).join('').slice(0,2);
     var isActive = activeTraderId === t.id;
+    var avatarContent = t.isAI ? AI_AVATAR_SVG : initials;
     return '<div class="trader-card">'+
       '<div class="trader-head">'+
-        '<div class="trader-avatar" style="background:'+meta.color+'cc;">'+initials+'</div>'+
+        '<div class="trader-avatar" style="background:'+meta.color+'cc;display:flex;align-items:center;justify-content:center;">'+avatarContent+'</div>'+
         '<div>'+
-          '<span class="trader-name">'+t.name+'</span>'+
+          '<span class="trader-name">'+t.name+(t.isAI?'<span class="expert-badge" style="background:rgba(6,182,212,.16);color:#06b6d4;border-color:rgba(6,182,212,.3);">AI</span>':'')+'</span>'+
           '<span class="trader-tag">'+t.style+'</span>'+
         '</div>'+
       '</div>'+

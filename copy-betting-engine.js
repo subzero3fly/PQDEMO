@@ -19,16 +19,12 @@
 
   // ── Expert profiles ────────────────────────────────────────────────────────
   var EXPERTS = [
-    { id:'expert_aria',    name:'Aria Voss',      winRate:0.87, categories:['politics','news'],          freqMs:95000  },
-    { id:'expert_marco',   name:'Marco Reyes',    winRate:0.81, categories:['sports','entertainment'],   freqMs:110000 },
-    { id:'expert_priya',   name:'Priya Nair',     winRate:0.84, categories:['crypto','finance'],         freqMs:80000  },
-    { id:'expert_tobias',  name:'Tobias Holt',    winRate:0.76, categories:['sports','politics'],        freqMs:130000 },
-    { id:'expert_celeste', name:'Celeste Okafor', winRate:0.90, categories:['politics','culture'],       freqMs:150000 },
-    { id:'expert_jin',     name:'Jin Park',       winRate:0.79, categories:['crypto','sports'],          freqMs:70000  },
-    { id:'expert_soren',   name:'Søren Dahl',     winRate:0.83, categories:['finance','economy'],        freqMs:120000 },
-    { id:'expert_fatima',  name:'Fatima Al-Amin', winRate:0.88, categories:['culture','geopolitics'],   freqMs:100000 },
-    { id:'expert_dmitri',  name:'Dmitri Volkov',  winRate:0.77, categories:['crypto','geopolitics'],    freqMs:90000  },
-    { id:'expert_lena',    name:'Lena Strauss',   winRate:0.85, categories:['sports','economy'],        freqMs:115000 }
+    { id:'expert_aria',    name:'Aria Voss',      winRate:0.87, categories:['politics','news'],          freqMs:95000,  isAI:false },
+    { id:'expert_marco',   name:'Marco Reyes',    winRate:0.81, categories:['sports','entertainment'],   freqMs:110000, isAI:false },
+    { id:'expert_tobias',  name:'Tobias Holt',    winRate:0.76, categories:['sports','politics'],        freqMs:130000, isAI:false },
+    { id:'expert_jin',     name:'Jin Park',       winRate:0.79, categories:['crypto','sports'],          freqMs:70000,  isAI:false },
+    { id:'expert_lena',    name:'Lena Strauss',   winRate:0.85, categories:['sports','economy'],        freqMs:115000, isAI:false },
+    { id:'expert_axiom',   name:'Axiom',          winRate:0.89, categories:['politics','crypto','sports','finance','culture','news','entertainment','economy','geopolitics'], freqMs:85000, isAI:true }
   ];
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -100,6 +96,14 @@
       var balance = ud.balance || 0;
       var stake   = Math.round(balance * ((cb.riskPercent || 10) / 100) * 100) / 100;
       if (stake < 1 || stake > balance) return;
+
+      // Never mirror the same market twice for this user — checked against
+      // Firestore (not just in-memory), so it holds even across page reloads.
+      var dupSnap = await db.collection('copyPositions')
+        .where('userId','==',currentUser.uid)
+        .where('marketId','==',market.id)
+        .limit(1).get();
+      if (!dupSnap.empty) return;
 
       var entryProb  = side === 'YES' ? Math.round(market.currentProbability || 50) : Math.round(100 - (market.currentProbability || 50));
       var potential  = entryProb > 0 ? Math.round(stake / (entryProb / 100) * 100) / 100 : 0;

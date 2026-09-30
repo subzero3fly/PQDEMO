@@ -169,7 +169,7 @@
       body.innerHTML = '';
       hasMessages = snap.docs.length > 0;
       snap.docs.forEach(function(d) { appendMessageEl(d.data()); });
-      if (!hasMessages) renderChips();
+      renderChips(); // always available, not just before the first message
     }, function(e) { console.warn('[chat] messages listener error:', e.message); });
   }
 
