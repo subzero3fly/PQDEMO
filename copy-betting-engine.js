@@ -68,6 +68,30 @@
     return weighted[idx];
   }
 
+  function toDate(v) { return !v ? null : (v.toDate ? v.toDate() : new Date(v)); }
+
+  // Close date = max(user signup, market creation) + resolution days
+  function computeResolveAt(userCreated, market) {
+    if (typeof market.resolutionDays === 'number') {
+      var base = null;
+      [toDate(userCreated), toDate(market.createdAt)].forEach(function (d) {
+        if (d && (!base || d > base)) base = d;
+      });
+      if (base) return new Date(base.getTime() + market.resolutionDays * 86400000);
+    }
+    return toDate(market.resolutionDate);
+  }
+
+  // ── Cached copyBetting doc (per user) ──────────────────────────────────────
+  var CB_TTL = 5 * 60 * 1000;
+  var _cb = null;   // { uid, data, at }
+  async function getCB(uid) {
+    if (_cb && _cb.uid === uid && Date.now() - _cb.at < CB_TTL) return _cb.data;
+    var snap = await db.collection('copyBetting').doc(uid).get();
+    _cb = { uid: uid, data: snap.exists ? snap.data() : null, at: Date.now() };
+    return _cb.data;
+  }
+
   // ── Mirror a bet to the current signed-in user ─────────────────────────────
   async function mirrorBetToUser(market, side, expertId) {
     var currentUser = auth.currentUser;
@@ -75,17 +99,15 @@
 
     var today = todayUTC();
     try {
-      // Read own copyBetting doc
-      var cbSnap = await db.collection('copyBetting').doc(currentUser.uid).get();
-      if (!cbSnap.exists || cbSnap.data().status !== 'active') return;
-      if (cbSnap.data().expertId !== expertId) return; // following a different expert
-
-      var cb = cbSnap.data();
+      // Own copyBetting state is cached (5 min) so idle ticks cost zero reads
+      var cb = await getCB(currentUser.uid);
+      if (!cb || cb.status !== 'active') return;
+      if (cb.expertId !== expertId) return; // following a different expert
 
       // Reset daily count if new UTC day
       if (cb.lastResetDate !== today) {
         await db.collection('copyBetting').doc(currentUser.uid).update({ betsToday: 0, lastResetDate: today });
-        cb.betsToday = 0;
+        cb.betsToday = 0; cb.lastResetDate = today;
       }
       if (cb.betsToday >= (cb.maxBetsPerDay || 5)) return;
 
@@ -105,7 +127,12 @@
         .limit(1).get();
       if (!dupSnap.empty) return;
 
-      var entryProb  = side === 'YES' ? Math.round(market.currentProbability || 50) : Math.round(100 - (market.currentProbability || 50));
+      // Skip markets whose window has already closed for this user
+      var resolveAt = computeResolveAt(ud.createdAt, market);
+      if (resolveAt && resolveAt.getTime() <= Date.now()) return;
+
+      var yesNow     = piqProb.now(market);   // computed locally, no read
+      var entryProb  = side === 'YES' ? Math.round(yesNow) : Math.round(100 - yesNow);
       var potential  = entryProb > 0 ? Math.round(stake / (entryProb / 100) * 100) / 100 : 0;
 
       var batch = db.batch();
@@ -119,6 +146,7 @@
         entryProbability: entryProb,
         potentialPayout:  potential,
         status:           'open',
+        resolveAt:        resolveAt ? firebase.firestore.Timestamp.fromDate(resolveAt) : null,
         payoutAmount:     null,
         feeAmount:        null,
         createdAt:        firebase.firestore.FieldValue.serverTimestamp(),
@@ -137,11 +165,15 @@
       batch.set(db.collection('marketLive').doc(market.id), {
         totalVolume: firebase.firestore.FieldValue.increment(stake)
       }, { merge: true });
+      batch.update(db.collection('markets').doc(market.id), {
+        totalVolume: firebase.firestore.FieldValue.increment(stake)
+      });
       batch.update(db.collection('copyBetting').doc(currentUser.uid), {
         betsToday:     firebase.firestore.FieldValue.increment(1),
         lastResetDate: today
       });
       await batch.commit();
+      cb.betsToday = (cb.betsToday || 0) + 1; cb.lastResetDate = today;
       console.log('[copy-betting] mirrored', side, '$'+stake, 'for', currentUser.uid, 'on market', market.id);
     } catch(e) {
       console.warn('[copy-betting] mirrorBetToUser failed:', e.message);
@@ -178,24 +210,19 @@
       var secretFetches = mSnap.docs.map(function(d) {
         return db.collection('marketSecrets').doc(d.id).get().catch(function(){ return null; });
       });
-      var liveFetches = mSnap.docs.map(function(d) {
-        return db.collection('marketLive').doc(d.id).get().catch(function(){ return null; });
-      });
-
-      var [secrets, lives] = await Promise.all([
-        Promise.all(secretFetches),
-        Promise.all(liveFetches)
-      ]);
+      var secrets = await Promise.all(secretFetches);
 
       _activeMarkets = mSnap.docs.map(function(d, i) {
         var data   = d.data();
         var secret = secrets[i] && secrets[i].exists ? secrets[i].data() : null;
-        var live   = lives[i]   && lives[i].exists   ? lives[i].data()   : {};
         return {
-          id:                 d.id,
-          category:           data.category || '',
-          currentProbability: typeof live.currentProbability === 'number' ? live.currentProbability : (data.startingProbability || 50),
-          secret:             secret
+          id:                  d.id,
+          category:            data.category || '',
+          createdAt:           data.createdAt || null,
+          startingProbability: data.startingProbability || 50,
+          resolutionDays:      typeof data.resolutionDays === 'number' ? data.resolutionDays : null,
+          resolutionDate:      data.resolutionDate || null,
+          secret:              secret
         };
       }).filter(function(m) { return !!m.secret; });
 
@@ -205,11 +232,11 @@
     }
   }
 
-  // Refresh market list every 5 minutes
+  // Refresh market list every 30 minutes (markets rarely change)
   function scheduleMarketRefresh() {
     setTimeout(function() {
       loadActiveMarkets().then(scheduleMarketRefresh);
-    }, 5 * 60 * 1000);
+    }, 30 * 60 * 1000);
   }
 
   // ── Public API ─────────────────────────────────────────────────────────────
@@ -239,7 +266,10 @@
      * Call when user starts following an expert — immediately places them
      * into all open markets the expert hasn't bet on yet.
      */
+    invalidate: function () { _cb = null; },
+
     userStartCopying: async function (uid, expertId) {
+      _cb = null;   // force a fresh read of the user's follow state
       var expert = EXPERTS.find(function(e) { return e.id === expertId; });
       if (!expert) return;
       if (!_expertBets[expertId]) _expertBets[expertId] = new Set();

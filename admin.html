@@ -179,12 +179,12 @@
     <!-- MARKETS -->
     <div class="admin-panel" id="panel-markets">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
-        <p style="font-size:13px;color:var(--text-dim);margin:0;">Create and resolve prediction markets. Resolution bias is hidden from users.</p>
+        <p style="font-size:13px;color:var(--text-dim);margin:0;">Create prediction markets — they settle automatically per user. Resolution bias is hidden from users.</p>
         <button class="a-btn" style="background:var(--accent);color:#fff;border-color:var(--accent);" onclick="openCreateMarket()">+ Create Market</button>
       </div>
       <div class="admin-table-wrap">
         <table class="admin-tbl">
-          <thead><tr><th>Question</th><th>Category</th><th>Prob.</th><th>Volume</th><th>Ends</th><th>Status</th><th>Action</th></tr></thead>
+          <thead><tr><th>Question</th><th>Category</th><th>Prob.</th><th>Volume</th><th>Ends</th><th>Status</th></tr></thead>
           <tbody id="marketsBody"></tbody>
         </table>
       </div>
@@ -327,7 +327,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="prediction-engine.js"></script>
+<script src="probability.js"></script>
 <script>
 var adminUser = null, balTargetUid = null;
 
@@ -718,35 +718,25 @@ async function saveAllWallets() {
     msg.style.display     = 'block';
   }
 }
-var _resolveTargetId = null;
-var PLATFORM_FEE = 0.02;
 
 async function loadMarkets() {
   var tbody = document.getElementById('marketsBody');
-  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-dim);">Loading…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-dim);">Loading…</td></tr>';
   try {
-    var [mSnap, lSnap] = await Promise.all([
-      db.collection('markets').orderBy('createdAt','desc').get(),
-      db.collection('marketLive').get()
-    ]);
-    var lmap = {};
-    lSnap.forEach(function(d){ lmap[d.id] = d.data(); });
+    var mSnap = await db.collection('markets').orderBy('createdAt','desc').get();
     if (mSnap.empty) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-dim);">No markets yet. Create one above.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-dim);">No markets yet. Create one above.</td></tr>';
       return;
     }
     tbody.innerHTML = mSnap.docs.map(function(d) {
       var m    = d.data();
-      var live = lmap[d.id] || {};
-      var prob = typeof live.currentProbability === 'number' ? Math.round(live.currentProbability) : Math.round(m.startingProbability||50);
-      var vol  = live.totalVolume >= 1000 ? '$'+((live.totalVolume/1000).toFixed(1))+'K' : '$'+Math.round(live.totalVolume||0);
+      var tv   = m.totalVolume || 0;
+      var prob = Math.round(piqProb.now(Object.assign({id:d.id}, m)));
+      var vol  = tv >= 1000 ? '$'+((tv/1000).toFixed(1))+'K' : '$'+Math.round(tv);
       var ends = typeof m.resolutionDays === 'number'
         ? m.resolutionDays + ' day' + (m.resolutionDays===1?'':'s') + ' after signup'
         : (m.resolutionDate ? (m.resolutionDate.toDate ? m.resolutionDate.toDate() : new Date(m.resolutionDate)).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—');
       var stCls = m.status==='active' ? 'active' : 'resolved';
-      var action = m.status==='active'
-        ? '<button class="a-btn" data-id="'+d.id+'" data-q="'+encodeURIComponent(m.question||'')+'" onclick="openResolveModal(this.dataset.id,decodeURIComponent(this.dataset.q))">Resolve</button>'
-        : '<span style="font-size:12px;color:var(--text-dim);">'+(m.resolvedOutcome||'Resolved')+'</span>';
       var qShort = (m.question||'').length > 55 ? (m.question||'').slice(0,52)+'…' : (m.question||'—');
       return '<tr>'+
         '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+(m.question||'')+'"><strong>'+qShort+'</strong></td>'+
@@ -755,7 +745,6 @@ async function loadMarkets() {
         '<td style="font-family:monospace;">'+vol+'</td>'+
         '<td style="font-size:12px;color:var(--text-dim);">'+ends+'</td>'+
         '<td><span class="s-badge '+stCls+'">'+m.status+'</span></td>'+
-        '<td>'+action+'</td>'+
       '</tr>';
     }).join('');
   } catch(e) {
@@ -801,7 +790,7 @@ async function submitCreateMarket() {
   var errs = [];
   if (!question)                        errs.push('Question is required.');
   if (!resDaysVal || isNaN(resDays) || resDays < 1) errs.push('Resolution period must be at least 1 day.');
-  if (isNaN(prob)||prob<2||prob>98)     errs.push('Starting probability must be 2–98.');
+  if (isNaN(prob)||prob<20||prob>80)    errs.push('Starting probability must be 20–80.');
   if (!bias)                            errs.push('Resolution bias is required.');
   if (mType === 'multi' && !outcomes)   errs.push('Outcomes are required for multi-outcome markets.');
 
@@ -841,26 +830,14 @@ async function submitCreateMarket() {
       createdAt:           firebase.firestore.FieldValue.serverTimestamp()
     });
     batch.set(liveRef, {
-      currentProbability: prob,
       totalVolume:        seedVol,
       lastUpdated:        firebase.firestore.FieldValue.serverTimestamp()
     });
     batch.set(secRef, {
-      resolutionBias:    bias,
-      targetProbability: bias === 'YES' ? Math.max(prob, 72) : Math.min(prob, 28)
+      resolutionBias:    bias
     });
 
     await batch.commit();
-
-    // First probability history snapshot
-    await db.collection('markets').doc(mktRef.id)
-      .collection('probabilityHistory').add({
-        probability: prob,
-        timestamp:   firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-    // Tell engine to pick up the new market
-    if (window.predictionEngine) predictionEngine.refresh();
 
     closeCreateMarket();
     showToast('Market created successfully.');
@@ -870,102 +847,6 @@ async function submitCreateMarket() {
     errEl.style.display = 'block';
   }
   btn.disabled = false; btn.textContent = 'Create Market';
-}
-
-// ── Resolve Market ─────────────────────────────────────────────────────────
-function openResolveModal(id, question) {
-  _resolveTargetId = id;
-  document.getElementById('rmQuestion').textContent = question;
-  document.getElementById('rmOutcome').value        = '';
-  document.getElementById('rmErr').style.display    = 'none';
-  document.getElementById('rmModal').style.display  = 'flex';
-}
-function closeResolveModal() {
-  document.getElementById('rmModal').style.display = 'none';
-  _resolveTargetId = null;
-}
-
-async function submitResolveMarket() {
-  var outcome = document.getElementById('rmOutcome').value;
-  var errEl   = document.getElementById('rmErr');
-  errEl.style.display = 'none';
-  if (!outcome)         { errEl.textContent = 'Select an outcome.'; errEl.style.display='block'; return; }
-  if (!_resolveTargetId){ return; }
-
-  var btn = document.getElementById('rmBtn');
-  btn.disabled = true; btn.textContent = 'Resolving…';
-
-  try {
-    var marketId = _resolveTargetId;
-
-    // Fetch all open positions for this market
-    var [manSnap, cpSnap] = await Promise.all([
-      db.collection('positions').where('marketId','==',marketId).where('status','==','open').get(),
-      db.collection('copyPositions').where('marketId','==',marketId).where('status','==','open').get()
-    ]);
-
-    var all = [
-      ...manSnap.docs.map(function(d){ return {id:d.id,col:'positions',    data:d.data()}; }),
-      ...cpSnap.docs.map(function(d) { return {id:d.id,col:'copyPositions',data:d.data()}; })
-    ];
-
-    var deltas  = {};
-    var txRows  = [];
-    var posOps  = all.map(function(p) {
-      var d = p.data, win = d.side === outcome;
-      if (win) {
-        var gross = d.stake / ((d.entryProbability||50) / 100);
-        var fee   = Math.round(gross * PLATFORM_FEE * 100) / 100;
-        var net   = Math.round((gross - fee) * 100) / 100;
-        deltas[d.userId] = (deltas[d.userId]||0) + net;
-        txRows.push({uid:d.userId, type:'payout', amount:net,  ref:p.id});
-        txRows.push({uid:d.userId, type:'fee',    amount:-fee, ref:p.id});
-        return {ref:db.collection(p.col).doc(p.id), data:{status:'won', payoutAmount:net, feeAmount:fee, settledAt:firebase.firestore.FieldValue.serverTimestamp()}};
-      }
-      return {ref:db.collection(p.col).doc(p.id), data:{status:'lost', payoutAmount:0, feeAmount:0, settledAt:firebase.firestore.FieldValue.serverTimestamp()}};
-    });
-
-    // Fetch winner balances
-    var uids   = Object.keys(deltas);
-    var uSnaps = uids.length ? await Promise.all(uids.map(function(uid){ return db.collection('users').doc(uid).get(); })) : [];
-    var umap   = {};
-    uSnaps.forEach(function(s){ if(s.exists) umap[s.id]=s.data(); });
-
-    // Build ops array
-    var ops = [];
-    posOps.forEach(function(p){ ops.push({ref:p.ref, type:'update', data:p.data}); });
-    uids.forEach(function(uid) {
-      ops.push({ref:db.collection('users').doc(uid), type:'update', data:{balance:firebase.firestore.FieldValue.increment(deltas[uid])}});
-      txRows.filter(function(r){return r.uid===uid;}).forEach(function(r){
-        ops.push({ref:db.collection('transactions').doc(), type:'set', data:{
-          userId:uid, type:r.type, amount:r.amount, relatedId:r.ref,
-          createdAt:firebase.firestore.FieldValue.serverTimestamp()
-        }});
-      });
-    });
-    ops.push({ref:db.collection('markets').doc(marketId), type:'update', data:{
-      status:'resolved', resolvedOutcome:outcome, resolvedAt:firebase.firestore.FieldValue.serverTimestamp()
-    }});
-
-    // Flush in batches of 400
-    for (var i=0; i<ops.length; i+=400) {
-      var batch = db.batch();
-      ops.slice(i,i+400).forEach(function(op){
-        op.type==='set' ? batch.set(op.ref,op.data) : batch.update(op.ref,op.data);
-      });
-      await batch.commit();
-    }
-
-    var winners = all.filter(function(p){return p.data.side===outcome;}).length;
-    closeResolveModal();
-    showToast('Resolved as '+outcome+'. '+winners+' winner(s) paid out.');
-    loadMarkets();
-  } catch(e) {
-    errEl.textContent = 'Failed: '+e.message;
-    errEl.style.display = 'block';
-    console.error('resolveMarket error:', e);
-  }
-  btn.disabled = false; btn.textContent = 'Resolve Market';
 }
 
 // ── SUPPORT INBOX ──────────────────────────────────────────────────────────
@@ -1130,7 +1011,6 @@ auth.onAuthStateChanged(async function(user) {
     var snap = await db.collection('admins').doc(user.uid).get();
     if (!snap.exists) { location.href = 'index.html'; return; }
     adminUser = user;
-    predictionEngine.start();
     document.getElementById('adminEmailLabel').textContent = user.email || '';
     startSupportInbox();
     document.getElementById('loader').style.display = 'none';
@@ -1170,9 +1050,9 @@ auth.onAuthStateChanged(async function(user) {
         <div><label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Resolution Period (days) *</label>
           <input id="cmResDays" type="number" min="1" max="365" step="1" placeholder="e.g. 5" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;"></div>
         <div><label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Starting Probability (YES %)</label>
-          <input id="cmProb" type="number" min="2" max="98" value="50" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;"></div>
+          <input id="cmProb" type="number" min="20" max="80" value="50" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;"></div>
       </div>
-      <div style="font-size:12px;color:var(--text-faint);margin-top:-6px;">Each user's "Closes" date is calculated from their own signup date + this many days — not a fixed calendar date.</div>
+      <div style="font-size:12px;color:var(--text-faint);margin-top:-6px;">Each user's close date = later of their signup date or this market's creation date, plus this many days. Positions settle automatically.</div>
       <div><label style="font-size:13px;font-weight:600;color:var(--warn,#f2b341);display:block;margin-bottom:6px;">Resolution Bias (Hidden from users) *</label>
         <select id="cmBias" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;">
           <option value="YES">YES — this market will resolve YES</option>
@@ -1184,33 +1064,6 @@ auth.onAuthStateChanged(async function(user) {
       </div>
       <div id="cmErr" style="font-size:13px;color:var(--no);display:none;padding:8px 12px;background:rgba(242,73,107,.08);border-radius:8px;"></div>
       <button id="cmBtn" onclick="submitCreateMarket()" style="height:46px;border-radius:99px;background:var(--accent);color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:inherit;">Create Market</button>
-    </div>
-  </div>
-</div>
-
-<!-- Resolve Market Modal -->
-<div id="rmModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.65);align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)closeResolveModal()">
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px 24px;width:100%;max-width:420px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <h3 style="font-size:18px;font-weight:800;color:var(--text);margin:0;">Resolve Market</h3>
-      <button onclick="closeResolveModal()" style="background:none;border:none;cursor:pointer;color:var(--text-dim);padding:4px;"><svg style="width:20px;height:20px;" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
-    </div>
-    <p id="rmQuestion" style="font-size:14px;color:var(--text-dim);margin-bottom:16px;line-height:1.5;"></p>
-    <div style="margin-bottom:14px;">
-      <label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Correct Outcome *</label>
-      <select id="rmOutcome" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:15px;font-family:inherit;outline:none;">
-        <option value="">Select outcome</option>
-        <option value="YES">YES</option>
-        <option value="NO">NO</option>
-      </select>
-    </div>
-    <div style="background:rgba(242,179,65,.08);border:1px solid rgba(242,179,65,.2);border-radius:10px;padding:10px 14px;font-size:12.5px;color:var(--warn,#f2b341);margin-bottom:14px;">
-      This is permanent. Winning positions will be paid out immediately at 98% of their calculated return (2% platform fee).
-    </div>
-    <div id="rmErr" style="font-size:13px;color:var(--no);display:none;margin-bottom:10px;"></div>
-    <div style="display:flex;gap:10px;">
-      <button onclick="closeResolveModal()" style="flex:1;height:44px;border-radius:99px;background:none;border:1px solid var(--border);color:var(--text-dim);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Cancel</button>
-      <button id="rmBtn" onclick="submitResolveMarket()" style="flex:1;height:44px;border-radius:99px;background:var(--no,#f2496b);color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:inherit;">Resolve Market</button>
     </div>
   </div>
 </div>

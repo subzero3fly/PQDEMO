@@ -290,7 +290,21 @@ function startPriceRefresh(pricesObj, onUpdate) {
   }, COMMODITY_TTL);
 
   // Simulation tick every 10s — pauses on weekends/after hours
-  var _saveTimer = null;
+  // Shared price cache is saved at most once per 5 min (first save ~60s after load)
+  // so an always-open tab uses ~576 writes/day instead of ~17,000.
+  var SAVE_EVERY = 5 * 60 * 1000;
+  var _lastSave  = Date.now() - SAVE_EVERY + 60000;
+  var _pendingForex = null, _pendingCommod = null;
+  function flushPriceSave() {
+    if (!_pendingForex) return;
+    _lastSave = Date.now();
+    db.collection('forexPrices').doc('latest').update(_pendingForex).catch(function(){});
+    db.collection('commodityPrices').doc('latest').update(_pendingCommod).catch(function(){});
+    _pendingForex = _pendingCommod = null;
+  }
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden && Date.now() - _lastSave >= SAVE_EVERY) flushPriceSave();
+  });
   setInterval(function() {
     if (!isMarketOpen()) return;
     var simSymbols = Object.keys(SIM_RANGES);
@@ -312,11 +326,8 @@ function startPriceRefresh(pricesObj, onUpdate) {
     });
     if (changed) {
       if (onUpdate) onUpdate();
-      clearTimeout(_saveTimer);
-      _saveTimer = setTimeout(function() {
-        db.collection('forexPrices').doc('latest').update(forexUpdate).catch(function(){});
-        db.collection('commodityPrices').doc('latest').update(commodUpdate).catch(function(){});
-      }, 500);
+      _pendingForex = forexUpdate; _pendingCommod = commodUpdate;
+      if (Date.now() - _lastSave >= SAVE_EVERY) flushPriceSave();
     }
   }, SIM_TICK);
 

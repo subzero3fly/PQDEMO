@@ -97,6 +97,16 @@
     .copy-section.active { display:block; }
 
     /* ── Trader cards (mirrors expert-card) ── */
+    .grp-head { grid-column:1/-1; display:flex; align-items:center; gap:10px; margin-top:6px;
+      font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-dim); }
+    .grp-head::after { content:''; flex:1; height:1px; background:var(--border); }
+    .grp-head.ai-head { color:#06b6d4; }
+    .grp-head.ai-head::after { background:rgba(6,182,212,.35); }
+    .expert-card.ai-card, .trader-card.ai-card {
+      border-color:rgba(6,182,212,.5);
+      background:linear-gradient(180deg, rgba(6,182,212,.10), var(--surface) 55%);
+      box-shadow:0 0 0 1px rgba(6,182,212,.12), 0 8px 24px rgba(6,182,212,.10);
+    }
     .trader-grid { display:grid; grid-template-columns:1fr; gap:14px; padding:12px 0; }
     @media(min-width:640px){ .trader-grid { grid-template-columns:repeat(2,1fr); } }
     .trader-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px; }
@@ -261,7 +271,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="prediction-engine.js"></script>
+<script src="probability.js"></script>
+<script src="settlement-engine.js"></script>
 <script src="copy-betting-engine.js"></script>
 <script src="trading-engine.js"></script>
 <script src="copy-trading-engine.js"></script>
@@ -314,10 +325,19 @@ function pFmt(n) {
 }
 
 // ── Render expert grid ──────────────────────────────────────────────────────
+function groupCards(list, fn, aiLabel, humanLabel) {
+  var ai = list.filter(function(x){ return x.isAI; });
+  var hu = list.filter(function(x){ return !x.isAI; });
+  var out = '';
+  if (ai.length) out += '<div class="grp-head ai-head">'+aiLabel+'</div>' + ai.map(fn).join('');
+  if (hu.length) out += (ai.length ? '<div class="grp-head">'+humanLabel+'</div>' : '') + hu.map(fn).join('');
+  return out;
+}
+
 function renderExperts() {
   var experts = copyBettingEngine.getExperts();
   var grid    = document.getElementById('expertGrid');
-  grid.innerHTML = experts.map(function(e) {
+  grid.innerHTML = groupCards(experts, function(e) {
     var meta     = EXPERT_META[e.id] || {tag:'Market Expert', color:'var(--accent)'};
     var wr       = Math.round(e.winRate * 100);
     var cats     = e.categories.map(function(c){ return c.charAt(0).toUpperCase()+c.slice(1); }).join(', ');
@@ -326,7 +346,7 @@ function renderExperts() {
     var isActive = activeCopyId === e.id;
     var isTop    = e.winRate >= 0.87;
     var avatarContent = e.isAI ? AI_AVATAR_SVG : initials;
-    return '<div class="expert-card">'+
+    return '<div class="expert-card'+(e.isAI?' ai-card':'')+'">'+
       '<div class="expert-head">'+
         '<div class="expert-avatar" style="background:'+meta.color+'cc;display:flex;align-items:center;justify-content:center;">'+avatarContent+'</div>'+
         '<div>'+
@@ -347,19 +367,19 @@ function renderExperts() {
         : '<button class="follow-btn follow" data-id="'+e.id+'" data-name="'+e.name+'" onclick="openFollowModal(this.dataset.id,this.dataset.name)" '+(activeCopyId?'disabled style="opacity:.45;cursor:not-allowed;"':'')+'>'+(activeCopyId?'Following Another':'Follow')+'</button>'
       )+
     '</div>';
-  }).join('');
+  }, 'AI Expert', 'Human Experts');
 }
 
 // ── Render trader grid ──────────────────────────────────────────────────────
 function renderTraders() {
   var traders = copyTradingEngine.getTraders();
   var grid    = document.getElementById('traderGrid');
-  grid.innerHTML = traders.map(function(t) {
+  grid.innerHTML = groupCards(traders, function(t) {
     var meta     = TRADER_META[t.id] || {color:'var(--accent)'};
     var initials = t.name.split(' ').map(function(w){ return w[0]; }).join('').slice(0,2);
     var isActive = activeTraderId === t.id;
     var avatarContent = t.isAI ? AI_AVATAR_SVG : initials;
-    return '<div class="trader-card">'+
+    return '<div class="trader-card'+(t.isAI?' ai-card':'')+'">'+
       '<div class="trader-head">'+
         '<div class="trader-avatar" style="background:'+meta.color+'cc;display:flex;align-items:center;justify-content:center;">'+avatarContent+'</div>'+
         '<div>'+
@@ -373,7 +393,7 @@ function renderTraders() {
         : '<button class="follow-btn follow" data-id="'+t.id+'" data-name="'+t.name+'" onclick="openFollowTraderModal(this.dataset.id,this.dataset.name)" '+(activeTraderId?'disabled style="opacity:.45;cursor:not-allowed;"':'')+'>'+(activeTraderId?'Following Another':'Follow')+'</button>'
       )+
     '</div>';
-  }).join('');
+  }, 'AI Trader', 'Human Traders');
 }
 
 // ── Active copy banner ──────────────────────────────────────────────────────
@@ -512,6 +532,7 @@ async function stopCopying() {
       stoppedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     activeCopyId = null;
+    if (window.copyBettingEngine) copyBettingEngine.invalidate();
     document.getElementById('activeBanner').style.display = 'none';
     renderExperts();
     pToast('No longer following this expert.', 'ok');
@@ -573,6 +594,7 @@ async function stopCopyingTrader() {
       status:    'stopped',
       stoppedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+    if (window.copyTradingEngine) copyTradingEngine.invalidate();
     activeTraderId = null;
     document.getElementById('activeTradingBanner').style.display = 'none';
     renderTraders();
@@ -586,7 +608,6 @@ async function stopCopyingTrader() {
 auth.onAuthStateChanged(async function(user) {
   if (!user) { location.href = 'login.html'; return; }
   currentUser = user;
-  predictionEngine.start();
   copyBettingEngine.start();
   copyTradingEngine.start();
 

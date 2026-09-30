@@ -165,10 +165,10 @@
   function attachMessagesListener() {
     if (msgsUnsub || !msgsRef) return;
     var body = document.getElementById('piqChatBody');
-    msgsUnsub = msgsRef.orderBy('timestamp', 'asc').onSnapshot(function(snap) {
+    msgsUnsub = msgsRef.orderBy('timestamp', 'desc').limit(60).onSnapshot(function(snap) {
       body.innerHTML = '';
       hasMessages = snap.docs.length > 0;
-      snap.docs.forEach(function(d) { appendMessageEl(d.data()); });
+      snap.docs.slice().reverse().forEach(function(d) { appendMessageEl(d.data()); });
       renderChips(); // always available, not just before the first message
     }, function(e) { console.warn('[chat] messages listener error:', e.message); });
   }

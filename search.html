@@ -218,7 +218,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="prediction-engine.js"></script>
+<script src="probability.js"></script>
+<script src="settlement-engine.js"></script>
 <script src="trading-engine.js"></script>
 <script>
 function fmtBal(n) {
@@ -227,7 +228,6 @@ function fmtBal(n) {
 
 auth.onAuthStateChanged(async function(user) {
   if (!user) { window.location.href = 'login.html'; return; }
-  predictionEngine.start();
 
   try {
     var snap = await db.collection('users').doc(user.uid).get();
@@ -449,6 +449,7 @@ filterInstrCategory('all', document.querySelector('.instr-cat-tab'));
 // Load markets once on page load
 db.collection('markets').where('status','==','active').get().then(function(snap){
   allMarkets = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+  piqProb.apply(allMarkets);
 }).catch(function(e){ console.warn('Search load error:',e); });
 </script>
 

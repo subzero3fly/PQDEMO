@@ -349,7 +349,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="prediction-engine.js"></script>
+<script src="probability.js"></script>
+<script src="settlement-engine.js"></script>
 <script>
 // ── Globals ────────────────────────────────────────────────────────────────
 var marketId  = new URLSearchParams(location.search).get('id');
@@ -396,11 +397,30 @@ function buildCountdown(resDate) {
 // resolution period (in days), not a fixed calendar date. Legacy markets that
 // only have the old fixed resolutionDate fall back to that for everyone.
 function getUserResolveDate(m) {
-  if (typeof m.resolutionDays === 'number' && userData && userData.createdAt) {
-    var created = userData.createdAt.toDate ? userData.createdAt.toDate() : new Date(userData.createdAt);
-    return new Date(created.getTime() + m.resolutionDays * 86400000);
+  // close date = max(user signup, market creation) + resolution days
+  if (typeof m.resolutionDays === 'number') {
+    var base = null;
+    [userData && userData.createdAt, m.createdAt].forEach(function (v) {
+      if (!v) return;
+      var d = v.toDate ? v.toDate() : new Date(v);
+      if (!base || d > base) base = d;
+    });
+    if (base) return new Date(base.getTime() + m.resolutionDays * 86400000);
   }
   return m.resolutionDate || null;
+}
+function clampProb(p) { return Math.max(20, Math.min(80, p)); }
+function isWindowClosed(m) {
+  var rd = getUserResolveDate(m);
+  if (!rd) return false;
+  return (rd.toDate ? rd.toDate() : new Date(rd)).getTime() <= Date.now();
+}
+function lockBetting() {
+  ['btnYes','btnNo','betAmount'].forEach(function(id){ var el=document.getElementById(id); if(el) el.disabled = true; });
+  if (!document.getElementById('lockNote')) {
+    document.getElementById('betPanel').insertAdjacentHTML('beforeend',
+      '<p id="lockNote" style="font-size:12.5px;color:var(--text-dim);margin:10px 0 0;">Your window on this market has closed. Open positions settle automatically.</p>');
+  }
 }
 
 function startCountdown(resDate) {
@@ -422,6 +442,7 @@ function startCountdown(resDate) {
 
 // ── Probability live update ────────────────────────────────────────────────
 function updateProbDisplay(prob) {
+  if (market) market.currentProbability = prob;   // keep bet pricing in sync with the live number
   var yes = Math.round(prob);
   var no  = 100 - yes;
   // Stats
@@ -445,13 +466,11 @@ function updateProbDisplay(prob) {
 
 function startProbRefresh() {
   if (probInterval) clearInterval(probInterval);
+  // Computed locally from the market id + clock — no Firestore reads
   probInterval = setInterval(function() {
-    db.collection('marketLive').doc(marketId).get().then(function(snap) {
-      if (snap.exists && typeof snap.data().currentProbability === 'number') {
-        updateProbDisplay(snap.data().currentProbability);
-      }
-    }).catch(function(){});
-  }, 6000);
+    if (document.hidden || !market) return;
+    updateProbDisplay(piqProb.now(market));
+  }, 7000);
 }
 
 // ── Payout preview ─────────────────────────────────────────────────────────
@@ -460,10 +479,10 @@ function updatePayout() {
   if (!market || !stake) {
     document.getElementById('betResult').classList.remove('show'); return;
   }
-  var prob = market.currentProbability || market.startingProbability || 50;
-  var payout = stake / (prob/100);
-  document.getElementById('betPayout').textContent   = fmtBal(payout);
-  document.getElementById('betEntryProb').textContent= Math.round(prob)+'%';
+  var yes = clampProb(market.currentProbability || market.startingProbability || 50);
+  var no  = 100 - yes;
+  document.getElementById('betResult').innerHTML =
+    'YES pays <b>'+fmtBal(stake/(yes/100))+'</b> at '+Math.round(yes)+'% &nbsp;·&nbsp; NO pays <b>'+fmtBal(stake/(no/100))+'</b> at '+Math.round(no)+'%';
   document.getElementById('betResult').classList.add('show');
 }
 
@@ -533,6 +552,7 @@ function renderMarket(m) {
 
   // Countdown
   startCountdown(getUserResolveDate(m));
+  if (m.status !== 'resolved' && isWindowClosed(m)) lockBetting();
   startProbRefresh();
 }
 
@@ -546,13 +566,18 @@ async function placeBet(side) {
   if (!currentUser) { location.href = 'login.html'; return; }
   if (!market || market.status === 'resolved') { showToast('This market is closed.','err'); return; }
 
+  if (isWindowClosed(market)) { lockBetting(); showToast('Your window on this market has closed.','err'); return; }
+
   var stake = parseFloat(document.getElementById('betAmount').value);
   if (!stake || stake < 1) { showToast('Enter a valid stake amount.','err'); return; }
 
   var balance = userData ? (userData.balance||0) : 0;
   if (stake > balance) { showToast('Insufficient balance. Please deposit funds.','err'); return; }
 
-  var entryProb = market.currentProbability || market.startingProbability || 50;
+  var yesProb   = clampProb(market.currentProbability || market.startingProbability || 50);
+  var entryProb = side === 'YES' ? yesProb : Math.round((100 - yesProb) * 10) / 10;   // NO is priced at 100 − YES
+  var resolveDate = getUserResolveDate(market);
+  if (resolveDate && !resolveDate.toDate) resolveDate = new Date(resolveDate);
   var potential = Math.round((stake/(entryProb/100))*100)/100;
   var outcome   = null;
   if (market.marketType !== 'binary' && market.outcomes && market.outcomes.length > 2) {
@@ -580,6 +605,7 @@ async function placeBet(side) {
       entryProbability: entryProb,
       potentialPayout:  potential,
       status:           'open',
+      resolveAt:        resolveDate ? firebase.firestore.Timestamp.fromDate(resolveDate.toDate ? resolveDate.toDate() : resolveDate) : null,
       payoutAmount:     null,
       feeAmount:        null,
       createdAt:        firebase.firestore.FieldValue.serverTimestamp(),
@@ -604,6 +630,9 @@ async function placeBet(side) {
     batch.set(db.collection('marketLive').doc(marketId), {
       totalVolume: firebase.firestore.FieldValue.increment(stake)
     }, { merge:true });
+    batch.update(db.collection('markets').doc(marketId), {
+      totalVolume: firebase.firestore.FieldValue.increment(stake)
+    });
 
     await batch.commit();
 
@@ -663,6 +692,8 @@ function fmtDate(ts) {
   return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
 }
 
+window.addEventListener('settlement:done', function(){ if (typeof loadMyPositions==='function') loadMyPositions(); });
+
 // ── Auth + load ────────────────────────────────────────────────────────────
 auth.onAuthStateChanged(async function(user) {
   if (!user) { location.href = 'login.html'; return; }
@@ -709,14 +740,10 @@ auth.onAuthStateChanged(async function(user) {
     market = Object.assign({id:marketId}, mSnap.data());
     if (liveSnap.exists) {
       var live = liveSnap.data();
-      if (typeof live.currentProbability === 'number') market.currentProbability = live.currentProbability;
       if (typeof live.totalVolume === 'number') market.totalVolume = live.totalVolume;
     }
 
-    predictionEngine.start(function(mid, prob) {
-      if (mid !== marketId) return;
-      updateProbDisplay(prob);
-    });
+    market.currentProbability = piqProb.now(market);
     renderMarket(market);
     await loadMyPositions();
 

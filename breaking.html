@@ -120,7 +120,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="prediction-engine.js"></script>
+<script src="probability.js"></script>
+<script src="settlement-engine.js"></script>
 <script>
 function fmtBal(n) {
   return '$' + (parseFloat(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -128,7 +129,6 @@ function fmtBal(n) {
 
 auth.onAuthStateChanged(async function(user) {
   if (!user) { window.location.href = 'login.html'; return; }
-  predictionEngine.start();
 
   try {
     var snap = await db.collection('users').doc(user.uid).get();
@@ -287,46 +287,16 @@ async function loadBreakingMarkets() {
       return;
     }
 
-    // Fetch recent probability history for each market in parallel
     var markets = marketsSnap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
 
-    var historyFetches = markets.map(function(m) {
-      return db.collection('markets').doc(m.id)
-        .collection('probabilityHistory')
-        .orderBy('timestamp','desc')
-        .limit(12)
-        .get()
-        .then(function(snap){
-          return snap.docs.map(function(d){ return d.data(); }).reverse();
-        })
-        .catch(function(){ return []; });
-    });
-
-    var liveSnaps = markets.map(function(m) {
-      return db.collection('marketLive').doc(m.id).get().catch(function(){ return {exists:false}; });
-    });
-
-    var [histories, lives] = await Promise.all([
-      Promise.all(historyFetches),
-      Promise.all(liveSnaps)
-    ]);
-
-    allBreaking = markets.map(function(m, i) {
-      var history = histories[i];
-      var live    = lives[i].exists ? lives[i].data() : {};
-      var currentProb = typeof live.currentProbability === 'number'
-        ? live.currentProbability
-        : (m.startingProbability || 50);
-
-      // Calculate 24h delta from oldest snapshot in last 12 entries
-      var delta24h = 0;
-      if (history.length >= 2) {
-        var oldest = history[0].probability || currentProb;
-        delta24h   = currentProb - oldest;
-      }
+    // Probability + sparkline history are computed locally (zero Firestore reads)
+    allBreaking = markets.map(function(m) {
+      var history     = piqProb.history(m, 12, 24 * 3600000);
+      var currentProb = piqProb.now(m);
+      var delta24h    = history.length >= 2 ? currentProb - history[0].probability : 0;
       return Object.assign({}, m, {
         currentProbability: currentProb,
-        totalVolume:        live.totalVolume || m.totalVolume || 0,
+        totalVolume:        m.totalVolume || 0,
         recentHistory:      history,
         delta24h:           delta24h
       });

@@ -126,6 +126,15 @@
     }
   }
 
+  // ── Cached copyTrading doc (per user) ───────────────────────────────────────
+  var _ct = null;   // { uid, data, at }
+  async function getCT(uid) {
+    if (_ct && _ct.uid === uid && Date.now() - _ct.at < 5 * 60 * 1000) return _ct.data;
+    var snap = await db.collection('copyTrading').doc(uid).get();
+    _ct = { uid: uid, data: snap.exists ? snap.data() : null, at: Date.now() };
+    return _ct.data;
+  }
+
   // ── Trader tick — checks the current user's own per-user config fresh each
   // time (mirrors NexTrade's "re-read in case admin changed it" pattern), fires
   // a pair if there's headroom, and returns the delay to use for the next tick. ──
@@ -134,15 +143,15 @@
     if (!currentUser) return null; // nobody signed in — use default delay
 
     try {
-      var ctSnap = await db.collection('copyTrading').doc(currentUser.uid).get();
-      if (!ctSnap.exists || ctSnap.data().status !== 'active' || ctSnap.data().traderId !== trader.id) {
+      // Cached 5 min: idle ticks (not following this trader) cost zero reads
+      var ct = await getCT(currentUser.uid);
+      if (!ct || ct.status !== 'active' || ct.traderId !== trader.id) {
         return null; // not following this trader — use default delay
       }
-      var ct = ctSnap.data();
       var today = todayUTC();
       if (ct.lastResetDate !== today) {
         await db.collection('copyTrading').doc(currentUser.uid).update({ tradesToday: 0, lastResetDate: today });
-        ct.tradesToday = 0;
+        ct.tradesToday = 0; ct.lastResetDate = today; _ct = null;
       }
 
       var uSnap = await db.collection('users').doc(currentUser.uid).get();
@@ -159,6 +168,7 @@
         for (var i = 0; i < toFire; i++) {
           await mirrorTradeToUser(trader, riskPct, rrRatio);
         }
+        _ct = null;   // tradesToday changed — re-read next tick
       }
 
       var jitter = (Math.random() - 0.5) * pairInterval * 0.4;
@@ -182,6 +192,8 @@
 
   // ── Public API ─────────────────────────────────────────────────────────────
   window.copyTradingEngine = {
+
+    invalidate: function () { _ct = null; },
 
     start: async function () {
       if (_started) return;
@@ -208,6 +220,7 @@
      * so the account doesn't sit idle until the next scheduled tick.
      */
     userStartCopying: async function (uid, traderId) {
+      _ct = null;
       var trader = TRADERS.find(function(t) { return t.id === traderId; });
       if (!trader) return;
       await traderTick(trader);

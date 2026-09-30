@@ -99,7 +99,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="prediction-engine.js"></script>
+<script src="probability.js"></script>
+<script src="settlement-engine.js"></script>
 <script>
 auth.onAuthStateChanged(async function(user) {
   var guestEl = document.getElementById('headerGuest');
@@ -207,7 +208,7 @@ function buildCard(m) {
   var cat      = m.category || 'general';
   var isBinary = m.marketType === 'binary' || outcomes.length <= 2;
   var isBookmarked = !!userBookmarks[id];
-  var yesProb  = m.currentProbability || m.startingProbability || 50;
+  var yesProb  = Math.round(m.currentProbability || m.startingProbability || 50);
   var noProb   = 100 - yesProb;
   var detailUrl = 'market-detail.html?id=' + id;
 
@@ -335,6 +336,7 @@ function buildPills() {
 // Load markets from Firestore
 db.collection('markets').where('status','==','active').get().then(function(snap) {
   allMarkets = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+  piqProb.apply(allMarkets);
   buildPills();
   renderGrid();
 }).catch(function(e){ console.warn('Markets load failed:', e); });
@@ -342,7 +344,6 @@ db.collection('markets').where('status','==','active').get().then(function(snap)
 // Load user bookmarks once signed in
 auth.onAuthStateChanged(function(user){
   if (!user) return;
-  predictionEngine.start();
   currentUid = user.uid;
   db.collection('users').doc(user.uid).collection('bookmarks').get().then(function(snap){
     snap.forEach(function(d){ userBookmarks[d.id] = true; });
