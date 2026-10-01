@@ -9,6 +9,17 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
+    // A position may only be settled by its owner: open -> won/lost, touching only
+    // the settlement fields, and not before its own close date (resolveAt).
+    function isSettlement() {
+      return resource.data.status == 'open'
+        && request.resource.data.status in ['won', 'lost']
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'payoutAmount', 'feeAmount', 'settledAt'])
+        && (resource.data.get('resolveAt', null) == null
+            || request.time >= resource.data.resolveAt);
+    }
+
     // ── Admins ───────────────────────────────────────────────────────────────
     match /admins/{uid} {
       allow read:  if isSignedIn();
@@ -32,21 +43,23 @@ service cloud.firestore {
     match /markets/{marketId} {
       allow read:   if true;
       allow create: if isAdmin();
-      allow update: if isAdmin() || isSignedIn();
+      // Signed-in users may only bump the volume counter when they bet.
+      allow update: if isAdmin() ||
+                       (isSignedIn() &&
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalVolume']));
       allow delete: if isAdmin();
-
-      match /probabilityHistory/{snapId} {
-        allow read:   if true;
-        allow create: if isSignedIn();
-        allow update: if false;
-        allow delete: if isAdmin();
-      }
     }
 
     // ── Market live state ─────────────────────────────────────────────────────
     match /marketLive/{marketId} {
-      allow read:  if true;
-      allow write: if isSignedIn();
+      allow read:   if true;
+      allow create: if isAdmin() ||
+                       (isSignedIn() &&
+                        request.resource.data.keys().hasOnly(['totalVolume', 'lastUpdated']));
+      allow update: if isAdmin() ||
+                       (isSignedIn() &&
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalVolume', 'lastUpdated']));
+      allow delete: if isAdmin();
     }
 
     // ── Trading — live price caches (Forex/Commodities) ─────────────────────
@@ -65,7 +78,7 @@ service cloud.firestore {
     // ── Market secrets ────────────────────────────────────────────────────────
     match /marketSecrets/{marketId} {
       allow read:  if isSignedIn();
-      allow write: if isAdmin() || isSignedIn();
+      allow write: if isAdmin();
     }
 
     // ── Positions ─────────────────────────────────────────────────────────────
@@ -73,9 +86,10 @@ service cloud.firestore {
       allow read:   if isSignedIn() &&
                        (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isSignedIn() &&
-                       request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() &&
-                       (resource.data.userId == request.auth.uid || isAdmin());
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.status == 'open';
+      allow update: if isAdmin() ||
+                       (isSignedIn() && resource.data.userId == request.auth.uid && isSettlement());
       allow delete: if isAdmin();
     }
 
@@ -84,9 +98,10 @@ service cloud.firestore {
       allow read:   if isSignedIn() &&
                        (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isSignedIn() &&
-                       request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() &&
-                       (resource.data.userId == request.auth.uid || isAdmin());
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.status == 'open';
+      allow update: if isAdmin() ||
+                       (isSignedIn() && resource.data.userId == request.auth.uid && isSettlement());
       allow delete: if isAdmin();
     }
 
@@ -128,18 +143,6 @@ service cloud.firestore {
                        (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isSignedIn() &&
                        (request.resource.data.userId == request.auth.uid || isAdmin());
-      allow update: if false;
-      allow delete: if isAdmin();
-    }
-
-    // ── Transactions (deposits, withdrawals, stakes, payouts) ───────────────
-    // Users can create their own transactions and read their own.
-    // Admin can read all and update status (approve/reject).
-    match /transactions/{txId} {
-      allow read:   if isSignedIn() &&
-                       (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isSignedIn() &&
-                       request.resource.data.userId == request.auth.uid;
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
@@ -154,7 +157,7 @@ service cloud.firestore {
     // ── Settings ─────────────────────────────────────────────────────────────
     match /settings/{doc} {
       allow read:  if true;
-      allow write: if doc == 'marketSync' ? isSignedIn() : isAdmin();
+      allow write: if isAdmin();
     }
 
     // ── Support chat ──────────────────────────────────────────────────────────

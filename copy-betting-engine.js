@@ -1,5 +1,5 @@
 /**
- * copy-betting-engine.js — PredictIQ Copy Betting Engine
+ * copy-betting-engine.js — VectorProb Copy Betting Engine
  *
  * Ten expert predictors with hidden personalities. Each expert fires
  * bets on a per-expert timer, betting correctly based on win rate vs
@@ -131,7 +131,7 @@
       var resolveAt = computeResolveAt(ud.createdAt, market);
       if (resolveAt && resolveAt.getTime() <= Date.now()) return;
 
-      var yesNow     = piqProb.now(market);   // computed locally, no read
+      var yesNow     = vpProb.now(market);   // computed locally, no read
       var entryProb  = side === 'YES' ? Math.round(yesNow) : Math.round(100 - yesNow);
       var potential  = entryProb > 0 ? Math.round(stake / (entryProb / 100) * 100) / 100 : 0;
 

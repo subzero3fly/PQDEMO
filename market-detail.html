@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>PredictIQ — Market</title>
+  <title>VectorProb — Market</title>
   <link rel="stylesheet" href="style.css"/>
   <style>
     /* ── Page-level extras ── */
@@ -206,13 +206,11 @@
       <span style="display:block;width:20px;height:2px;background:var(--text);border-radius:2px;"></span>
       <span style="display:block;width:20px;height:2px;background:var(--text);border-radius:2px;"></span>
     </button>
-    <a href="index.html" class="brand" aria-label="PredictIQ home">
+    <a href="index.html" class="brand" aria-label="VectorProb home">
       <svg class="brand-mark icon" viewBox="0 0 32 32" fill="none" stroke="currentColor">
-        <path d="M16 2 28 9v14L16 30 4 23V9Z" stroke-width="2" stroke-linejoin="round"/>
-        <path d="M9 18l4.5-6 4 4L23 10" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="23" cy="10" r="1.8" fill="currentColor" stroke="none"/>
+        <path d="M5 8l11 17L27 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 7.5h6.5V14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="25" r="1.9" fill="currentColor" stroke="none"/>
       </svg>
-      <span class="brand-name">Predict<span>IQ</span></span>
+      <span class="brand-name">Vector<span>Prob</span></span>
     </a>
     </div>
   </div>
@@ -469,7 +467,7 @@ function startProbRefresh() {
   // Computed locally from the market id + clock — no Firestore reads
   probInterval = setInterval(function() {
     if (document.hidden || !market) return;
-    updateProbDisplay(piqProb.now(market));
+    updateProbDisplay(vpProb.now(market));
   }, 7000);
 }
 
@@ -500,7 +498,7 @@ var CAT_ICONS = {
 
 // ── Render market ──────────────────────────────────────────────────────────
 function renderMarket(m) {
-  document.title = 'PredictIQ — ' + (m.question || 'Market');
+  document.title = 'VectorProb — ' + (m.question || 'Market');
   document.getElementById('mktTitle').textContent = m.question || 'Untitled';
 
   // Category icon + label
@@ -707,7 +705,7 @@ auth.onAuthStateChanged(async function(user) {
       for(var i=0;i<8;i++) rand+=chars[Math.floor(Math.random()*chars.length)];
       await db.collection('users').doc(user.uid).set({
         fullName:user.displayName||user.email.split('@')[0]||'User',
-        email:user.email||'',phone:'',accountId:'PIQ-'+rand,balance:0,
+        email:user.email||'',phone:'',accountId:'VP-'+rand,balance:0,
         createdAt:firebase.firestore.FieldValue.serverTimestamp()
       });
       uSnap = await db.collection('users').doc(user.uid).get();
@@ -743,7 +741,7 @@ auth.onAuthStateChanged(async function(user) {
       if (typeof live.totalVolume === 'number') market.totalVolume = live.totalVolume;
     }
 
-    market.currentProbability = piqProb.now(market);
+    market.currentProbability = vpProb.now(market);
     renderMarket(market);
     await loadMyPositions();
 

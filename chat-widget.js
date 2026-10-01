@@ -1,5 +1,5 @@
 /**
- * chat-widget.js — PredictIQ Support Chat
+ * chat-widget.js — VectorProb Support Chat
  *
  * Floating chat button + panel, injected entirely by this script (pages just
  * need one <script src="chat-widget.js"> tag). Replaces Smartsupp.
@@ -34,52 +34,52 @@
   // ── Inject styles ────────────────────────────────────────────────────────
   var style = document.createElement('style');
   style.textContent = [
-    '#piqChatBtn{position:fixed;bottom:84px;right:18px;width:56px;height:56px;border-radius:50%;background:#7c5cff;color:#fff;border:none;cursor:pointer;box-shadow:0 6px 20px rgba(124,92,255,.4);z-index:150;display:flex;align-items:center;justify-content:center;font-family:inherit;}',
-    '@media(min-width:769px){#piqChatBtn{bottom:24px;}}',
-    '#piqChatBtn svg{width:26px;height:26px;}',
-    '#piqChatDot{position:absolute;top:4px;right:4px;width:12px;height:12px;border-radius:50%;background:#f2496b;border:2px solid #0a0b0f;display:none;}',
-    '#piqChatPanel{position:fixed;bottom:0;right:0;left:0;max-width:380px;margin-left:auto;height:min(560px,80vh);background:#15171e;border:1px solid #262a35;border-radius:20px 20px 0 0;z-index:155;display:none;flex-direction:column;box-shadow:0 -8px 30px rgba(0,0,0,.45);font-family:"Inter","Segoe UI",system-ui,sans-serif;}',
-    '@media(min-width:769px){#piqChatPanel{bottom:24px;right:24px;left:auto;border-radius:20px;}}',
-    '#piqChatPanel.open{display:flex;}',
-    '.piqc-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #262a35;flex-shrink:0;}',
-    '.piqc-head-title{font-size:15px;font-weight:800;color:#fff;}',
-    '.piqc-head-sub{font-size:11.5px;color:#9498a4;margin-top:2px;}',
-    '.piqc-close{background:none;border:none;cursor:pointer;color:#9498a4;padding:4px;line-height:0;}',
-    '.piqc-close svg{width:20px;height:20px;}',
-    '.piqc-body{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:10px;}',
-    '.piqc-chips{display:flex;flex-direction:column;gap:8px;margin-top:6px;}',
-    '.piqc-chip{text-align:left;padding:10px 14px;border-radius:12px;border:1px solid #262a35;background:#1b1e27;color:#e7e9ee;font-size:13px;cursor:pointer;font-family:inherit;}',
-    '.piqc-chip:hover{border-color:#7c5cff;}',
-    '.piqc-msg{max-width:80%;padding:9px 13px;border-radius:14px;font-size:13.5px;line-height:1.45;word-wrap:break-word;}',
-    '.piqc-msg.user{align-self:flex-end;background:#7c5cff;color:#fff;border-bottom-right-radius:4px;}',
-    '.piqc-msg.other{align-self:flex-start;background:#1b1e27;color:#e7e9ee;border-bottom-left-radius:4px;}',
-    '.piqc-msg-label{font-size:10px;font-weight:700;color:#9498a4;margin-bottom:3px;display:block;}',
-    '.piqc-foot{border-top:1px solid #262a35;padding:12px;display:flex;gap:8px;flex-shrink:0;}',
-    '.piqc-input{flex:1;height:40px;padding:0 14px;border-radius:99px;background:#0a0b0f;border:1px solid #262a35;color:#fff;font-size:13.5px;font-family:inherit;outline:none;}',
-    '.piqc-input:focus{border-color:#7c5cff;}',
-    '.piqc-send{width:40px;height:40px;border-radius:50%;background:#7c5cff;border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}',
-    '.piqc-send svg{width:18px;height:18px;}'
+    '#vpChatBtn{position:fixed;bottom:84px;right:18px;width:56px;height:56px;border-radius:50%;background:#7c5cff;color:#fff;border:none;cursor:pointer;box-shadow:0 6px 20px rgba(124,92,255,.4);z-index:150;display:flex;align-items:center;justify-content:center;font-family:inherit;}',
+    '@media(min-width:769px){#vpChatBtn{bottom:24px;}}',
+    '#vpChatBtn svg{width:26px;height:26px;}',
+    '#vpChatDot{position:absolute;top:4px;right:4px;width:12px;height:12px;border-radius:50%;background:#f2496b;border:2px solid #0a0b0f;display:none;}',
+    '#vpChatPanel{position:fixed;bottom:0;right:0;left:0;max-width:380px;margin-left:auto;height:min(560px,80vh);background:#15171e;border:1px solid #262a35;border-radius:20px 20px 0 0;z-index:155;display:none;flex-direction:column;box-shadow:0 -8px 30px rgba(0,0,0,.45);font-family:"Inter","Segoe UI",system-ui,sans-serif;}',
+    '@media(min-width:769px){#vpChatPanel{bottom:24px;right:24px;left:auto;border-radius:20px;}}',
+    '#vpChatPanel.open{display:flex;}',
+    '.vpc-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #262a35;flex-shrink:0;}',
+    '.vpc-head-title{font-size:15px;font-weight:800;color:#fff;}',
+    '.vpc-head-sub{font-size:11.5px;color:#9498a4;margin-top:2px;}',
+    '.vpc-close{background:none;border:none;cursor:pointer;color:#9498a4;padding:4px;line-height:0;}',
+    '.vpc-close svg{width:20px;height:20px;}',
+    '.vpc-body{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:10px;}',
+    '.vpc-chips{display:flex;flex-direction:column;gap:8px;margin-top:6px;}',
+    '.vpc-chip{text-align:left;padding:10px 14px;border-radius:12px;border:1px solid #262a35;background:#1b1e27;color:#e7e9ee;font-size:13px;cursor:pointer;font-family:inherit;}',
+    '.vpc-chip:hover{border-color:#7c5cff;}',
+    '.vpc-msg{max-width:80%;padding:9px 13px;border-radius:14px;font-size:13.5px;line-height:1.45;word-wrap:break-word;}',
+    '.vpc-msg.user{align-self:flex-end;background:#7c5cff;color:#fff;border-bottom-right-radius:4px;}',
+    '.vpc-msg.other{align-self:flex-start;background:#1b1e27;color:#e7e9ee;border-bottom-left-radius:4px;}',
+    '.vpc-msg-label{font-size:10px;font-weight:700;color:#9498a4;margin-bottom:3px;display:block;}',
+    '.vpc-foot{border-top:1px solid #262a35;padding:12px;display:flex;gap:8px;flex-shrink:0;}',
+    '.vpc-input{flex:1;height:40px;padding:0 14px;border-radius:99px;background:#0a0b0f;border:1px solid #262a35;color:#fff;font-size:13.5px;font-family:inherit;outline:none;}',
+    '.vpc-input:focus{border-color:#7c5cff;}',
+    '.vpc-send{width:40px;height:40px;border-radius:50%;background:#7c5cff;border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}',
+    '.vpc-send svg{width:18px;height:18px;}'
   ].join('');
   document.head.appendChild(style);
 
   // ── Inject DOM ───────────────────────────────────────────────────────────
   var btn = document.createElement('button');
-  btn.id = 'piqChatBtn';
+  btn.id = 'vpChatBtn';
   btn.setAttribute('aria-label', 'Open support chat');
-  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span id="piqChatDot"></span>';
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span id="vpChatDot"></span>';
   document.body.appendChild(btn);
 
   var panel = document.createElement('div');
-  panel.id = 'piqChatPanel';
+  panel.id = 'vpChatPanel';
   panel.innerHTML =
-    '<div class="piqc-head">' +
-      '<div><div class="piqc-head-title">PredictIQ Support</div><div class="piqc-head-sub">We usually reply within a few hours</div></div>' +
-      '<button class="piqc-close" id="piqChatCloseBtn" aria-label="Close chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>' +
+    '<div class="vpc-head">' +
+      '<div><div class="vpc-head-title">VectorProb Support</div><div class="vpc-head-sub">We usually reply within a few hours</div></div>' +
+      '<button class="vpc-close" id="vpChatCloseBtn" aria-label="Close chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>' +
     '</div>' +
-    '<div class="piqc-body" id="piqChatBody"></div>' +
-    '<div class="piqc-foot">' +
-      '<input type="text" class="piqc-input" id="piqChatInput" placeholder="Type a message…" />' +
-      '<button class="piqc-send" id="piqChatSendBtn" aria-label="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>' +
+    '<div class="vpc-body" id="vpChatBody"></div>' +
+    '<div class="vpc-foot">' +
+      '<input type="text" class="vpc-input" id="vpChatInput" placeholder="Type a message…" />' +
+      '<button class="vpc-send" id="vpChatSendBtn" aria-label="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>' +
     '</div>';
   document.body.appendChild(panel);
 
@@ -90,13 +90,13 @@
   }
 
   function renderChips() {
-    var body = document.getElementById('piqChatBody');
+    var body = document.getElementById('vpChatBody');
     var wrap = document.createElement('div');
-    wrap.className = 'piqc-chips';
-    wrap.id = 'piqChatChips';
+    wrap.className = 'vpc-chips';
+    wrap.id = 'vpChatChips';
     Object.keys(QUICK_REPLIES).forEach(function(q) {
       var chip = document.createElement('button');
-      chip.className = 'piqc-chip';
+      chip.className = 'vpc-chip';
       chip.textContent = q;
       chip.onclick = function() { sendMessage(q, true); };
       wrap.appendChild(chip);
@@ -105,16 +105,16 @@
   }
 
   function removeChips() {
-    var chips = document.getElementById('piqChatChips');
+    var chips = document.getElementById('vpChatChips');
     if (chips) chips.remove();
   }
 
   function appendMessageEl(m) {
-    var body = document.getElementById('piqChatBody');
+    var body = document.getElementById('vpChatBody');
     var el = document.createElement('div');
     var isUser = m.sender === 'user';
-    el.className = 'piqc-msg ' + (isUser ? 'user' : 'other');
-    var label = m.sender === 'admin' ? '<span class="piqc-msg-label">Support</span>' : m.sender === 'bot' ? '<span class="piqc-msg-label">PredictIQ Bot</span>' : '';
+    el.className = 'vpc-msg ' + (isUser ? 'user' : 'other');
+    var label = m.sender === 'admin' ? '<span class="vpc-msg-label">Support</span>' : m.sender === 'bot' ? '<span class="vpc-msg-label">VectorProb Bot</span>' : '';
     el.innerHTML = label + escapeHtml(m.text || '');
     body.appendChild(el);
     body.scrollTop = body.scrollHeight;
@@ -135,9 +135,9 @@
     if (!user) {
       detachAll();
       chatId = null; chatRef = null; msgsRef = null;
-      var dot0 = document.getElementById('piqChatDot');
+      var dot0 = document.getElementById('vpChatDot');
       if (dot0) dot0.style.display = 'none';
-      document.getElementById('piqChatBody').innerHTML = '';
+      document.getElementById('vpChatBody').innerHTML = '';
       return;
     }
     if (chatId === user.uid) return;
@@ -145,11 +145,11 @@
     chatId  = user.uid;
     chatRef = db.collection('chats').doc(chatId);
     msgsRef = chatRef.collection('messages');
-    if (user.isAnonymous) sessionStorage.setItem('piq_chat_guest_uid', user.uid);
-    document.getElementById('piqChatBody').innerHTML = '';
+    if (user.isAnonymous) sessionStorage.setItem('vp_chat_guest_uid', user.uid);
+    document.getElementById('vpChatBody').innerHTML = '';
 
     chatUnsub = chatRef.onSnapshot(function(snap) {
-      var dot = document.getElementById('piqChatDot');
+      var dot = document.getElementById('vpChatDot');
       var d = snap.exists ? snap.data() : null;
       if (d && d.unreadByUser) {
         if (isOpen) { chatRef.update({ unreadByUser: false }).catch(function(){}); dot.style.display = 'none'; }
@@ -164,7 +164,7 @@
 
   function attachMessagesListener() {
     if (msgsUnsub || !msgsRef) return;
-    var body = document.getElementById('piqChatBody');
+    var body = document.getElementById('vpChatBody');
     msgsUnsub = msgsRef.orderBy('timestamp', 'desc').limit(60).onSnapshot(function(snap) {
       body.innerHTML = '';
       hasMessages = snap.docs.length > 0;
@@ -217,7 +217,7 @@
     text = (text || '').trim();
     if (!text || !chatRef) return;
     var isFirstMessage = !hasMessages;
-    document.getElementById('piqChatInput').value = '';
+    document.getElementById('vpChatInput').value = '';
     removeChips();
 
     try {
@@ -260,11 +260,11 @@
     var onAuth = auth.onAuthStateChangedRaw || auth.onAuthStateChanged.bind(auth);
     onAuth(function(user) { setIdentity(user); });
 
-    // Shared by the floating button and window.piqChat.open()/send()
+    // Shared by the floating button and window.vpChat.open()/send()
     async function openPanel() {
       isOpen = true;
       panel.classList.add('open');
-      document.getElementById('piqChatDot').style.display = 'none';
+      document.getElementById('vpChatDot').style.display = 'none';
 
       if (!chatId) {
         try {
@@ -272,20 +272,20 @@
           setIdentity(cred.user);
         } catch(e) {
           console.warn('[chat] signInAnonymously failed:', e.message);
-          document.getElementById('piqChatBody').innerHTML = '<p style="color:#9498a4;font-size:13px;">Chat is temporarily unavailable. Please try again shortly.</p>';
+          document.getElementById('vpChatBody').innerHTML = '<p style="color:#9498a4;font-size:13px;">Chat is temporarily unavailable. Please try again shortly.</p>';
           return false;
         }
       }
       attachMessagesListener();
       chatRef.update({ unreadByUser: false }).catch(function(){});
-      setTimeout(function(){ document.getElementById('piqChatInput').focus(); }, 50);
+      setTimeout(function(){ document.getElementById('vpChatInput').focus(); }, 50);
       return true;
     }
     btn.addEventListener('click', openPanel);
 
     // Small public API so other page features (footer "Support" link, the
     // bank-transfer deposit flow) can open the chat, optionally with a message.
-    window.piqChat = {
+    window.vpChat = {
       open: openPanel,
       send: async function(text) {
         var ok = await openPanel();
@@ -296,14 +296,14 @@
       }
     };
 
-    document.getElementById('piqChatCloseBtn').addEventListener('click', function() {
+    document.getElementById('vpChatCloseBtn').addEventListener('click', function() {
       isOpen = false;
       panel.classList.remove('open');
     });
-    document.getElementById('piqChatSendBtn').addEventListener('click', function() {
-      sendMessage(document.getElementById('piqChatInput').value, false);
+    document.getElementById('vpChatSendBtn').addEventListener('click', function() {
+      sendMessage(document.getElementById('vpChatInput').value, false);
     });
-    document.getElementById('piqChatInput').addEventListener('keydown', function(e) {
+    document.getElementById('vpChatInput').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') sendMessage(this.value, false);
     });
   }

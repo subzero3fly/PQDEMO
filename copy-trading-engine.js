@@ -1,5 +1,5 @@
 /**
- * copy-trading-engine.js — PredictIQ Copy Trading Engine
+ * copy-trading-engine.js — VectorProb Copy Trading Engine
  *
  * Ten expert traders with hidden personalities, Forex and Commodities only
  * (never Crypto — those prices are real and unpredictable). Each trader
@@ -67,8 +67,26 @@
       var balance = uSnap.data().balance || 0;
       if (balance <= 0) return false;
 
-      // Pick instrument by weighted bias
-      var instruments = Object.keys(trader.bias);
+      // Open positions: never stack a copy trade on a symbol that already has one,
+      // and never open against any open position the user already holds there.
+      var openSnap = await db.collection('trades')
+        .where('userId', '==', currentUser.uid).where('status', '==', 'open').get();
+      var openBySym = {};
+      openSnap.forEach(function(d) { var t = d.data(); (openBySym[t.symbol] = openBySym[t.symbol] || []).push(t); });
+
+      function dirFor(sym) {
+        var sm = window._simState ? window._simState[sym] : null;
+        return (!sm || sm.trendDir > 0) ? 'BUY' : 'SELL';
+      }
+
+      // Pick instrument by weighted bias, from the symbols that are free
+      var instruments = Object.keys(trader.bias).filter(function(sym) {
+        if (!_prices[sym]) return false;
+        var d = dirFor(sym);
+        return (openBySym[sym] || []).every(function(t) { return !t.isCopyTrade && t.type === d; });
+      });
+      if (!instruments.length) return false;   // nothing safe to open this tick
+
       var weights     = instruments.map(function(s) { return trader.bias[s]; });
       var totalWeight = weights.reduce(function(a,b){ return a+b; }, 0);
       var rand = Math.random() * totalWeight;
@@ -80,11 +98,12 @@
       var entryPrice = _prices[chosen];
       if (!entryPrice) return false;
 
-      // Direction: win rate determines how often we align with the live sim trend
-      var sim = window._simState ? window._simState[chosen] : null;
-      var trendDir = sim ? sim.trendDir : 1;
-      var alignWithTrend = Math.random() < trader.wr;
-      var tradeType = alignWithTrend ? (trendDir > 0 ? 'BUY' : 'SELL') : (trendDir > 0 ? 'SELL' : 'BUY');
+      var tradeType = dirFor(chosen);
+
+      // The trader's stated win rate decides the outcome up front: this trade will
+      // close at its take-profit (win) or stop-loss (loss) after a short random delay.
+      var plannedOutcome = Math.random() < trader.wr ? 'tp' : 'sl';
+      var closeAtMs      = Date.now() + Math.floor(90000 + Math.random() * 270000);   // 1.5–6 min
 
       var isCommodity = COMMODITY_SYMS.indexOf(chosen) !== -1;
       var slDist = SL_DIST[chosen] || 0.0010;
@@ -112,7 +131,9 @@
         exitPrice:    null,
         closedBy:     null,
         isCopyTrade:  true,
-        traderId:     trader.id
+        traderId:     trader.id,
+        plannedOutcome: plannedOutcome,
+        closeAt:      firebase.firestore.Timestamp.fromMillis(closeAtMs)
       });
       await db.collection('copyTrading').doc(currentUser.uid).update({
         tradesToday:   firebase.firestore.FieldValue.increment(1),

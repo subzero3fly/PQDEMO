@@ -1,15 +1,15 @@
 /**
- * probability.js — PredictIQ displayed-probability generator (zero Firestore usage)
+ * probability.js — VectorProb displayed-probability generator (zero Firestore usage)
  *
  * The displayed YES probability is a deterministic, bounded (20–80%) wandering
  * value computed from the market id and the clock. Every user's browser computes
  * the same number, so nothing is stored or read. It has NO relationship to the
  * hidden resolution bias — purely cosmetic.
  *
- *   piqProb.now(market)                → number (1 decimal)
- *   piqProb.at(market, ms)             → number at a given time
- *   piqProb.history(market, n, spanMs) → [{probability, t}] oldest → newest
- *   piqProb.apply(marketsArray)        → sets .currentProbability on each
+ *   vpProb.now(market)                → number (1 decimal)
+ *   vpProb.at(market, ms)             → number at a given time
+ *   vpProb.history(market, n, spanMs) → [{probability, t}] oldest → newest
+ *   vpProb.apply(marketsArray)        → sets .currentProbability on each
  *
  * `market` needs: id, startingProbability, createdAt (Timestamp/Date/ms).
  */
@@ -69,7 +69,7 @@
     return Math.round(Math.max(MIN, Math.min(MAX, v)) * 10) / 10;
   }
 
-  window.piqProb = {
+  window.vpProb = {
     now: function (m) { return at(m, Date.now()); },
     at:  at,
     history: function (m, n, spanMs) {

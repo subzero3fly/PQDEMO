@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>PredictIQ — Sign In</title>
+  <title>VectorProb — Sign In</title>
   <link rel="stylesheet" href="style.css"/>
   <style>
     body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--bg); padding:20px; }
@@ -38,11 +38,9 @@
 <div class="auth-card">
   <div class="auth-brand">
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor">
-      <path d="M16 2 28 9v14L16 30 4 23V9Z" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M9 18l4.5-6 4 4L23 10" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="23" cy="10" r="1.8" fill="currentColor" stroke="none"/>
+      <path d="M5 8l11 17L27 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 7.5h6.5V14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="25" r="1.9" fill="currentColor" stroke="none"/>
     </svg>
-    <span style="font-family:var(--font-display);font-weight:800;font-size:18px;color:var(--text);">Predict<span style="color:var(--accent);">IQ</span></span>
+    <span style="font-family:var(--font-display);font-weight:800;font-size:18px;color:var(--text);">Vector<span style="color:var(--accent);">Prob</span></span>
   </div>
 
   <div class="auth-title">Welcome back</div>
@@ -98,7 +96,7 @@ function generateAccountId() {
   var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   var rand  = '';
   for (var i = 0; i < 8; i++) rand += chars[Math.floor(Math.random() * chars.length)];
-  return 'PIQ-' + rand;
+  return 'VP-' + rand;
 }
 
 async function doLogin() {

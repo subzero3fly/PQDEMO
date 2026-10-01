@@ -1,5 +1,5 @@
 /**
- * settlement-engine.js — PredictIQ per-user settlement
+ * settlement-engine.js — VectorProb per-user settlement
  *
  * Runs in the signed-in user's browser. It does NOT poll. Reads are spent only:
  *   - on a page load, at most once per 10 min (remembered in localStorage)
@@ -106,7 +106,7 @@
     });
   }
 
-  var LS = function () { return 'piq_settle_' + _uid; };
+  var LS = function () { return 'vp_settle_' + _uid; };
 
   function schedule() {
     if (_dueTimer) clearTimeout(_dueTimer);

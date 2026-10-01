@@ -1,5 +1,5 @@
 // ============================================================
-// PredictIQ — Trading Engine
+// VectorProb — Trading Engine
 // Shared logic for Forex/Commodity/Crypto trading (trade.html).
 // Ported from NexTrade's firebase-config.js — instrument data,
 // live price feeds, PnL calculation and market-hours handling.
@@ -398,6 +398,18 @@ async function checkTpSl(uid, openTrades, pricesObj) {
     var cur = pricesObj[t.symbol] || t.entryPrice;
     if (!cur) return;
     var hit = null, exitPrice = cur;
+
+    // Copy trades carry a pre-decided outcome (from the trader's win rate). They ignore
+    // live price crossings and close at the planned TP/SL level once closeAt has passed.
+    if (t.isCopyTrade && t.plannedOutcome && t.closeAt) {
+      var due = (t.closeAt.toMillis ? t.closeAt.toMillis() : new Date(t.closeAt).getTime()) <= Date.now();
+      if (due) {
+        var lvl = t.plannedOutcome === 'tp' ? t.takeProfit : t.stopLoss;
+        if (lvl) toClose.push({ trade:t, reason:t.plannedOutcome, price:lvl });
+      }
+      return;
+    }
+
     if (t.takeProfit) {
       if (t.type==='BUY'  && cur >= t.takeProfit) { hit='tp'; exitPrice=t.takeProfit; }
       if (t.type==='SELL' && cur <= t.takeProfit) { hit='tp'; exitPrice=t.takeProfit; }
