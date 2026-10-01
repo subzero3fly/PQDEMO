@@ -215,9 +215,6 @@
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:480px;">
     <h3 style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px;" id="followModalTitle">Follow Expert</h3>
     <p style="font-size:13.5px;color:var(--text-dim);margin-bottom:18px;" id="followModalSub">This expert will automatically place bets on your behalf.</p>
-    <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:18px;font-size:13px;color:var(--text-dim);line-height:1.6;">
-      Your risk per bet is set in your copy config. Bets are limited by your daily maximum. You can stop following at any time.
-    </div>
     <div style="display:flex;gap:10px;">
       <button onclick="closeFollowModal()" style="flex:1;height:44px;border-radius:99px;background:none;border:1px solid var(--border);color:var(--text-dim);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Cancel</button>
       <button id="confirmFollowBtn" onclick="confirmFollow()" style="flex:1;height:44px;border-radius:99px;background:var(--accent,#7c5cff);color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:inherit;">Start Following</button>
@@ -230,9 +227,6 @@
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:480px;">
     <h3 style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px;" id="followTraderModalTitle">Follow Trader</h3>
     <p style="font-size:13.5px;color:var(--text-dim);margin-bottom:18px;">This trader will automatically place Forex &amp; Commodity trades on your behalf.</p>
-    <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:18px;font-size:13px;color:var(--text-dim);line-height:1.6;">
-      Risk per trade and daily trade limits are set by the platform. Crypto is never traded. You can stop following at any time.
-    </div>
     <div style="display:flex;gap:10px;">
       <button onclick="closeFollowTraderModal()" style="flex:1;height:44px;border-radius:99px;background:none;border:1px solid var(--border);color:var(--text-dim);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Cancel</button>
       <button id="confirmFollowTraderBtn" onclick="confirmFollowTrader()" style="flex:1;height:44px;border-radius:99px;background:var(--accent,#7c5cff);color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:inherit;">Start Following</button>
@@ -480,7 +474,6 @@ async function renderActiveTradingBanner() {
 // ── Follow / Stop ───────────────────────────────────────────────────────────
 function openFollowModal(expertId, expertName) {
   if (activeCopyId) { pToast('Stop your current copy first.','err'); return; }
-  if (activeTraderId) { pToast('You are copying a trader — stop that first to follow a betting expert.','err'); return; }
   pendingExpert = { id: expertId, name: expertName };
   document.getElementById('followModalTitle').textContent = 'Follow '+expertName;
   document.getElementById('followModal').style.display = 'flex';
@@ -542,7 +535,6 @@ async function stopCopying() {
 // ── Follow / Stop (trading) ─────────────────────────────────────────────────
 function openFollowTraderModal(traderId, traderName) {
   if (activeTraderId) { pToast('Stop your current copy first.','err'); return; }
-  if (activeCopyId) { pToast('You are copying a betting expert — stop that first to follow a trader.','err'); return; }
   pendingTrader = { id: traderId, name: traderName };
   document.getElementById('followTraderModalTitle').textContent = 'Follow '+traderName;
   document.getElementById('followTraderModal').style.display = 'flex';

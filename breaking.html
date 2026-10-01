@@ -285,7 +285,14 @@ async function loadBreakingMarkets() {
       return;
     }
 
-    var markets = marketsSnap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+    var uc = await vpWindow.getUserCreated();
+    var markets = marketsSnap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); })
+      .filter(function(m){ return vpWindow.isVisible(uc, m); });
+    if (!markets.length) {
+      document.getElementById('breakingLoader').style.display = 'none';
+      document.getElementById('breakingEmpty').style.display  = 'block';
+      return;
+    }
 
     // Probability + sparkline history are computed locally (zero Firestore reads)
     allBreaking = markets.map(function(m) {

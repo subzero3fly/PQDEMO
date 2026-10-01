@@ -332,8 +332,13 @@ function buildPills() {
 }
 
 // Load markets from Firestore
-db.collection('markets').where('status','==','active').get().then(function(snap) {
-  allMarkets = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+Promise.all([
+  db.collection('markets').where('status','==','active').get(),
+  vpWindow.getUserCreated()
+]).then(function(r) {
+  var snap = r[0], uc = r[1];
+  allMarkets = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); })
+    .filter(function(m){ return vpWindow.isVisible(uc, m); });
   vpProb.apply(allMarkets);
   buildPills();
   renderGrid();

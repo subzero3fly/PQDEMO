@@ -69,6 +69,49 @@
     return Math.round(Math.max(MIN, Math.min(MAX, v)) * 10) / 10;
   }
 
+  // ── Market window: when a market appears for a user, and when it closes for them ──
+  //   appears = max(user signup, market creation) + showAfterDays
+  //   closes  = appears + resolutionDays
+  var DAY = 86400000;
+  function appearsMs(userCreated, market) {
+    var base = Math.max(toMs(userCreated), toMs(market.createdAt));
+    if (!base) return null;
+    return base + (market.showAfterDays || 0) * DAY;
+  }
+  function getUserCreated() {            // signup date, cached so it costs 1 read ever
+    return new Promise(function (resolve) {
+      var done = false, un = null;
+      un = auth.onAuthStateChanged(function (u) {
+        if (done) return; done = true; if (un) un();
+        if (!u) { resolve(null); return; }
+        var key = 'vp_created_' + u.uid;
+        try { var c = localStorage.getItem(key); if (c) { resolve(new Date(parseInt(c, 10))); return; } } catch (e) {}
+        db.collection('users').doc(u.uid).get().then(function (s) {
+          var ms = s.exists ? toMs(s.data().createdAt) : 0;
+          if (ms) { try { localStorage.setItem(key, String(ms)); } catch (e) {} }
+          resolve(ms ? new Date(ms) : null);
+        }).catch(function () { resolve(null); });
+      });
+    });
+  }
+  window.vpWindow = {
+    getUserCreated: getUserCreated,
+    appearsAt: function (uc, m) { var t = appearsMs(uc, m); return t == null ? null : new Date(t); },
+    isVisible: function (uc, m) {
+      if (!m.showAfterDays) return true;            // immediate markets: always visible
+      var t = appearsMs(uc, m);
+      return t == null || t <= Date.now();
+    },
+    closeAt: function (uc, m) {
+      if (typeof m.resolutionDays === 'number') {
+        var t = appearsMs(uc, m);
+        return t == null ? null : new Date(t + m.resolutionDays * DAY);
+      }
+      var legacy = toMs(m.resolutionDate);
+      return legacy ? new Date(legacy) : null;
+    }
+  };
+
   window.vpProb = {
     now: function (m) { return at(m, Date.now()); },
     at:  at,

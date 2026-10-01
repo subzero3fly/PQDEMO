@@ -73,7 +73,7 @@
       [_userCreated, mc].forEach(function (d) {
         if (d && (!base || d > base)) base = d;
       });
-      if (base) return new Date(base.getTime() + market.resolutionDays * 86400000);
+      if (base) return new Date(base.getTime() + ((market.showAfterDays || 0) + market.resolutionDays) * 86400000);
     }
     return toDate(market.resolutionDate); // legacy fixed-date markets
   }

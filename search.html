@@ -447,8 +447,13 @@ function filterInstrCategory(cat, btn) {
 filterInstrCategory('all', document.querySelector('.instr-cat-tab'));
 
 // Load markets once on page load
-db.collection('markets').where('status','==','active').get().then(function(snap){
-  allMarkets = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+Promise.all([
+  db.collection('markets').where('status','==','active').get(),
+  vpWindow.getUserCreated()
+]).then(function(r){
+  var snap = r[0], uc = r[1];
+  allMarkets = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); })
+    .filter(function(m){ return vpWindow.isVisible(uc, m); });
   vpProb.apply(allMarkets);
 }).catch(function(e){ console.warn('Search load error:',e); });
 </script>

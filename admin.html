@@ -732,7 +732,7 @@ async function loadMarkets() {
       var prob = Math.round(vpProb.now(Object.assign({id:d.id}, m)));
       var vol  = tv >= 1000 ? '$'+((tv/1000).toFixed(1))+'K' : '$'+Math.round(tv);
       var ends = typeof m.resolutionDays === 'number'
-        ? m.resolutionDays + ' day' + (m.resolutionDays===1?'':'s') + ' per user'
+        ? m.resolutionDays + ' day' + (m.resolutionDays===1?'':'s') + ' per user' + (m.showAfterDays ? ' (appears +' + m.showAfterDays + 'd)' : '')
         : (m.resolutionDate ? (m.resolutionDate.toDate ? m.resolutionDate.toDate() : new Date(m.resolutionDate)).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—');
       var stCls = m.status==='active' ? 'active' : 'resolved';
       var qShort = (m.question||'').length > 55 ? (m.question||'').slice(0,52)+'…' : (m.question||'—');
@@ -756,6 +756,7 @@ function openCreateMarket() {
   document.getElementById('cmQuestion').value      = '';
   document.getElementById('cmCategory').value      = 'politics';
   document.getElementById('cmResDays').value        = '';
+  document.getElementById('cmShowAfter').value     = '0';
   document.getElementById('cmProb').value          = '50';
   document.getElementById('cmBias').value          = 'YES';
   document.getElementById('cmMarketType').value    = 'binary';
@@ -778,6 +779,8 @@ async function submitCreateMarket() {
   var category = document.getElementById('cmCategory').value;
   var resDaysVal = document.getElementById('cmResDays').value;
   var resDays  = parseInt(resDaysVal, 10);
+  var showAfterVal = document.getElementById('cmShowAfter').value;
+  var showAfter = showAfterVal === '' ? 0 : parseInt(showAfterVal, 10);
   var prob     = parseFloat(document.getElementById('cmProb').value);
   var bias     = document.getElementById('cmBias').value;
   var mType    = document.getElementById('cmMarketType').value;
@@ -788,6 +791,7 @@ async function submitCreateMarket() {
   var errs = [];
   if (!question)                        errs.push('Question is required.');
   if (!resDaysVal || isNaN(resDays) || resDays < 1) errs.push('Resolution period must be at least 1 day.');
+  if (isNaN(showAfter) || showAfter < 0 || showAfter > 365) errs.push('Show-after days must be 0-365.');
   if (isNaN(prob)||prob<20||prob>80)    errs.push('Starting probability must be 20–80.');
   if (!bias)                            errs.push('Resolution bias is required.');
   if (mType === 'multi' && !outcomes)   errs.push('Outcomes are required for multi-outcome markets.');
@@ -819,6 +823,7 @@ async function submitCreateMarket() {
       marketType:          mType,
       outcomes:            parsedOutcomes,
       resolutionDays:      resDays,
+      showAfterDays:       showAfter,
       startingProbability: prob,
       status:              'active',
       resolvedOutcome:     null,
@@ -1050,6 +1055,9 @@ auth.onAuthStateChanged(async function(user) {
         <div><label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Starting Probability (YES %)</label>
           <input id="cmProb" type="number" min="20" max="80" value="50" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;"></div>
       </div>
+      <div><label style="font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:6px;">Show to users after (days)</label>
+        <input id="cmShowAfter" type="number" min="0" max="365" step="1" value="0" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;">
+        <div style="font-size:12px;color:var(--text-faint);margin-top:6px;">0 = visible immediately. Otherwise the market appears for each user this many days after they sign up (existing users: after this market is created), and their resolution period starts then.</div></div>
       <div style="font-size:12px;color:var(--text-faint);margin-top:-6px;">Each user's close date = later of their signup date or this market's creation date, plus this many days. Positions settle automatically.</div>
       <div><label style="font-size:13px;font-weight:600;color:var(--warn,#f2b341);display:block;margin-bottom:6px;">Resolution Bias (Hidden from users) *</label>
         <select id="cmBias" style="width:100%;height:44px;padding:0 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;">

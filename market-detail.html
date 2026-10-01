@@ -395,17 +395,8 @@ function buildCountdown(resDate) {
 // resolution period (in days), not a fixed calendar date. Legacy markets that
 // only have the old fixed resolutionDate fall back to that for everyone.
 function getUserResolveDate(m) {
-  // close date = max(user signup, market creation) + resolution days
-  if (typeof m.resolutionDays === 'number') {
-    var base = null;
-    [userData && userData.createdAt, m.createdAt].forEach(function (v) {
-      if (!v) return;
-      var d = v.toDate ? v.toDate() : new Date(v);
-      if (!base || d > base) base = d;
-    });
-    if (base) return new Date(base.getTime() + m.resolutionDays * 86400000);
-  }
-  return m.resolutionDate || null;
+  // close date = (later of user signup / market creation) + show-after days + resolution days
+  return vpWindow.closeAt(userData && userData.createdAt, m) || m.resolutionDate || null;
 }
 function clampProb(p) { return Math.max(20, Math.min(80, p)); }
 function isWindowClosed(m) {
@@ -564,6 +555,7 @@ async function placeBet(side) {
   if (!currentUser) { location.href = 'login.html'; return; }
   if (!market || market.status === 'resolved') { showToast('This market is closed.','err'); return; }
 
+  if (!vpWindow.isVisible(userData && userData.createdAt, market)) { showToast('This market is not available yet.','err'); return; }
   if (isWindowClosed(market)) { lockBetting(); showToast('Your window on this market has closed.','err'); return; }
 
   var stake = parseFloat(document.getElementById('betAmount').value);
@@ -739,6 +731,12 @@ auth.onAuthStateChanged(async function(user) {
     if (liveSnap.exists) {
       var live = liveSnap.data();
       if (typeof live.totalVolume === 'number') market.totalVolume = live.totalVolume;
+    }
+
+    // Delayed markets stay hidden until their per-user appear date
+    if (!vpWindow.isVisible(userData && userData.createdAt, market)) {
+      document.getElementById('loader').style.display='none';
+      document.getElementById('notFound').style.display='block'; return;
     }
 
     market.currentProbability = vpProb.now(market);

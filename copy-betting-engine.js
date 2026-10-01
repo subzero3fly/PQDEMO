@@ -54,9 +54,10 @@
   }
 
   // Weighted market pick — prefers expert's categories (3× weight)
-  function pickMarket(expert, alreadyBet) {
+  function pickMarket(expert, alreadyBet, userCreated) {
     var available = _activeMarkets.filter(function(m) {
-      return !alreadyBet.has(m.id) && m.secret;
+      // only markets that have already appeared for this user
+      return !alreadyBet.has(m.id) && m.secret && vpWindow.isVisible(userCreated, m);
     });
     if (!available.length) return null;
     var weighted = [];
@@ -70,16 +71,9 @@
 
   function toDate(v) { return !v ? null : (v.toDate ? v.toDate() : new Date(v)); }
 
-  // Close date = max(user signup, market creation) + resolution days
+  // Close date = (later of user signup / market creation) + show-after days + resolution days
   function computeResolveAt(userCreated, market) {
-    if (typeof market.resolutionDays === 'number') {
-      var base = null;
-      [toDate(userCreated), toDate(market.createdAt)].forEach(function (d) {
-        if (d && (!base || d > base)) base = d;
-      });
-      if (base) return new Date(base.getTime() + market.resolutionDays * 86400000);
-    }
-    return toDate(market.resolutionDate);
+    return vpWindow.closeAt(userCreated, market);
   }
 
   // ── Cached copyBetting doc (per user) ──────────────────────────────────────
@@ -118,6 +112,9 @@
       var balance = ud.balance || 0;
       var stake   = Math.round(balance * ((cb.riskPercent || 10) / 100) * 100) / 100;
       if (stake < 1 || stake > balance) return;
+
+      // Never mirror a market that hasn't appeared for this user yet
+      if (!vpWindow.isVisible(ud.createdAt, market)) return;
 
       // Never mirror the same market twice for this user — checked against
       // Firestore (not just in-memory), so it holds even across page reloads.
@@ -183,7 +180,8 @@
   // ── Expert tick ────────────────────────────────────────────────────────────
   async function expertTick(expert) {
     if (!_expertBets[expert.id]) _expertBets[expert.id] = new Set();
-    var market = pickMarket(expert, _expertBets[expert.id]);
+    var uc = await vpWindow.getUserCreated();
+    var market = pickMarket(expert, _expertBets[expert.id], uc);
     if (!market) return;
     _expertBets[expert.id].add(market.id);
     var side = expertSide(expert, market.secret.resolutionBias);
@@ -219,6 +217,7 @@
           id:                  d.id,
           category:            data.category || '',
           createdAt:           data.createdAt || null,
+          showAfterDays:       data.showAfterDays || 0,
           startingProbability: data.startingProbability || 50,
           resolutionDays:      typeof data.resolutionDays === 'number' ? data.resolutionDays : null,
           resolutionDate:      data.resolutionDate || null,
@@ -274,8 +273,9 @@
       if (!expert) return;
       if (!_expertBets[expertId]) _expertBets[expertId] = new Set();
 
+      var uc = await vpWindow.getUserCreated();
       var catchUp = _activeMarkets.filter(function(m) {
-        return !_expertBets[expertId].has(m.id) && m.secret;
+        return !_expertBets[expertId].has(m.id) && m.secret && vpWindow.isVisible(uc, m);
       });
 
       for (var i = 0; i < catchUp.length; i++) {
