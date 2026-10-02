@@ -2,7 +2,7 @@
  {
   "n": 1,
   "category": "politics",
-  "question": "Will the Civic Union table a vote of no confidence in the Aldermoor government before this market closes?",
+  "question": "Will Narendra Modi address the nation in a televised speech before this market closes?",
   "marketType": "binary",
   "resolutionDays": 4,
   "showAfterDays": 0,
@@ -12,7 +12,7 @@
  {
   "n": 2,
   "category": "sports",
-  "question": "Will Harbor City FC beat Redmont Rovers in their next Premier Union match?",
+  "question": "Will Real Madrid beat FC Barcelona in their next El Clásico?",
   "marketType": "binary",
   "resolutionDays": 6,
   "showAfterDays": 0,
@@ -22,7 +22,7 @@
  {
   "n": 3,
   "category": "crypto",
-  "question": "Will Vaultline Finance (VLF) hold above $0.85 when this market closes?",
+  "question": "Will the total crypto market capitalization grow over the life of this market?",
   "marketType": "binary",
   "resolutionDays": 8,
   "showAfterDays": 0,
@@ -32,7 +32,7 @@
  {
   "n": 4,
   "category": "finance",
-  "question": "Will Thornfield Pharma announce a quarterly dividend increase before this market closes?",
+  "question": "Will NVIDIA outperform Microsoft over the life of this market?",
   "marketType": "binary",
   "resolutionDays": 10,
   "showAfterDays": 0,
@@ -42,7 +42,7 @@
  {
   "n": 5,
   "category": "tech",
-  "question": "Will Meridian Robotics demonstrate a humanoid warehouse robot at its showcase event?",
+  "question": "Will Amazon Web Services report a major outage before this market closes?",
   "marketType": "binary",
   "resolutionDays": 3,
   "showAfterDays": 0,
@@ -52,7 +52,7 @@
  {
   "n": 6,
   "category": "culture",
-  "question": "Will the top prize at the Kestrel Bay Film Festival go to a documentary?",
+  "question": "Will Drake release a new album before this market closes?",
   "marketType": "binary",
   "resolutionDays": 7,
   "showAfterDays": 0,
@@ -62,7 +62,7 @@
  {
   "n": 7,
   "category": "geopolitics",
-  "question": "Will the Greywater border crossing between Valdoria and Sorrenmark reopen before this market closes?",
+  "question": "Will the European Union approve a new sanctions package before close?",
   "marketType": "binary",
   "resolutionDays": 5,
   "showAfterDays": 0,
@@ -72,7 +72,7 @@
  {
   "n": 8,
   "category": "economy",
-  "question": "Will Tavoria's monthly inflation reading come in at or below 3.1%?",
+  "question": "Will US inflation come in lower than the previous reading in the next CPI release?",
   "marketType": "binary",
   "resolutionDays": 9,
   "showAfterDays": 0,
@@ -82,7 +82,7 @@
  {
   "n": 9,
   "category": "politics",
-  "question": "Will the Aldermoor Senate pass the Rural Broadband Act on its final reading before this market closes?",
+  "question": "Will Donald Trump's approval rating be higher in the next Gallup poll than in the previous one?",
   "marketType": "binary",
   "resolutionDays": 7,
   "showAfterDays": 1.0,
@@ -92,7 +92,7 @@
  {
   "n": 10,
   "category": "sports",
-  "question": "Will the Redmont Rovers keep a clean sheet in their next away match?",
+  "question": "Will the Los Angeles Lakers win their next game?",
   "marketType": "binary",
   "resolutionDays": 5,
   "showAfterDays": 1.25,
@@ -102,7 +102,7 @@
  {
   "n": 11,
   "category": "crypto",
-  "question": "Will Kestrel Coin (KSC) gain more than 8% from its opening price by the time this market closes?",
+  "question": "Will Ethereum outperform Bitcoin over the life of this market?",
   "marketType": "binary",
   "resolutionDays": 9,
   "showAfterDays": 1.75,
@@ -112,7 +112,7 @@
  {
   "n": 12,
   "category": "finance",
-  "question": "Will Brenmark Industrial (BMI) shares close higher than their opening price on the day this market closes?",
+  "question": "Will Apple stock close higher at the end of this market than at the start?",
   "marketType": "binary",
   "resolutionDays": 3,
   "showAfterDays": 2.0,
@@ -122,7 +122,7 @@
  {
   "n": 13,
   "category": "tech",
-  "question": "Will Quorra AI release its Helix-3 model to the public before this market closes?",
+  "question": "Will Google announce a new Pixel device before this market closes?",
   "marketType": "binary",
   "resolutionDays": 10,
   "showAfterDays": 2.25,
@@ -132,7 +132,7 @@
  {
   "n": 14,
   "category": "culture",
-  "question": "Will the Silverline series \"Harrow Point\" be renewed for a second season before close?",
+  "question": "Will Bad Bunny's next single reach number one on the Billboard Hot 100?",
   "marketType": "binary",
   "resolutionDays": 6,
   "showAfterDays": 2.5,
@@ -142,7 +142,7 @@
  {
   "n": 15,
   "category": "geopolitics",
-  "question": "Will the Solvane Federation and Valdoria extend their defense pact before this market closes?",
+  "question": "Will Germany and France announce a joint defense initiative before close?",
   "marketType": "binary",
   "resolutionDays": 4,
   "showAfterDays": 3.0,
@@ -152,7 +152,7 @@
  {
   "n": 16,
   "category": "economy",
-  "question": "Will Solvane's consumer confidence index rise in the next release?",
+  "question": "Will US nonfarm payrolls come in above expectations in the next jobs report?",
   "marketType": "binary",
   "resolutionDays": 8,
   "showAfterDays": 3.25,
@@ -162,7 +162,7 @@
  {
   "n": 17,
   "category": "politics",
-  "question": "Will the Aldermoor parliament approve the coastal defense budget without amendments?",
+  "question": "Will Friedrich Merz's coalition pass its next major bill in the Bundestag?",
   "marketType": "binary",
   "resolutionDays": 2,
   "showAfterDays": 3.5,
@@ -172,7 +172,7 @@
  {
   "n": 18,
   "category": "sports",
-  "question": "Will Stonebridge United and Calder Athletic finish their next league match as a draw?",
+  "question": "Will Arsenal beat Tottenham Hotspur in the next North London derby?",
   "marketType": "binary",
   "resolutionDays": 6,
   "showAfterDays": 3.75,
@@ -182,7 +182,7 @@
  {
   "n": 19,
   "category": "crypto",
-  "question": "Will Nimbus Chain (NMB) trade above $3.20 when this market closes?",
+  "question": "Will Bitcoin gain more than 5% over the life of this market?",
   "marketType": "binary",
   "resolutionDays": 9,
   "showAfterDays": 4.25,
@@ -192,7 +192,7 @@
  {
   "n": 20,
   "category": "finance",
-  "question": "Will the Tavoria Small Cap index outperform the Solvane 50 by the time this market closes?",
+  "question": "Will Meta Platforms outperform Alphabet over the life of this market?",
   "marketType": "binary",
   "resolutionDays": 5,
   "showAfterDays": 4.5,
@@ -202,7 +202,7 @@
  {
   "n": 21,
   "category": "tech",
-  "question": "Will the Nova Browser reach version 9.0 before this market closes?",
+  "question": "Will Microsoft announce a major Copilot update before close?",
   "marketType": "binary",
   "resolutionDays": 7,
   "showAfterDays": 4.75,
@@ -212,7 +212,7 @@
  {
   "n": 22,
   "category": "culture",
-  "question": "Will the Kestrel Bay Art Fair set a new attendance record?",
+  "question": "Will Dwayne Johnson announce a new film role before close?",
   "marketType": "binary",
   "resolutionDays": 4,
   "showAfterDays": 5.25,
@@ -222,7 +222,7 @@
  {
   "n": 23,
   "category": "geopolitics",
-  "question": "Will the Solvane Federation lift its export ban on rare minerals before close?",
+  "question": "Will Donald Trump and Xi Jinping meet in person before this market closes?",
   "marketType": "binary",
   "resolutionDays": 10,
   "showAfterDays": 5.5,
@@ -232,7 +232,7 @@
  {
   "n": 24,
   "category": "economy",
-  "question": "Will Aldermoor's retail sales index rise month over month in the next release?",
+  "question": "Will the Bank of England cut interest rates at its next meeting?",
   "marketType": "binary",
   "resolutionDays": 3,
   "showAfterDays": 5.75,
@@ -242,7 +242,7 @@
  {
   "n": 25,
   "category": "politics",
-  "question": "Will voter turnout in the Kestrel Bay municipal referendum exceed 55%?",
+  "question": "Will Italy's government led by Giorgia Meloni win its next confidence vote?",
   "marketType": "binary",
   "resolutionDays": 8,
   "showAfterDays": 6.0,
@@ -252,7 +252,7 @@
  {
   "n": 26,
   "category": "sports",
-  "question": "Will the Lakeside Hawks win their next game by 10 points or more?",
+  "question": "Will Erling Haaland score in Manchester City's next match?",
   "marketType": "binary",
   "resolutionDays": 6,
   "showAfterDays": 6.5,
@@ -262,7 +262,7 @@
  {
   "n": 27,
   "category": "crypto",
-  "question": "Will Orbis Network record more than 900,000 daily active wallets on any day before close?",
+  "question": "Will Dogecoin outperform Ethereum by the time this market closes?",
   "marketType": "binary",
   "resolutionDays": 7,
   "showAfterDays": 6.75,
@@ -272,7 +272,7 @@
  {
   "n": 28,
   "category": "finance",
-  "question": "Will the Tavoria Exchange composite index set a new all-time high before this market closes?",
+  "question": "Will the Nasdaq Composite gain more than 2% over the life of this market?",
   "marketType": "binary",
   "resolutionDays": 5,
   "showAfterDays": 7.0,
@@ -282,7 +282,7 @@
  {
   "n": 29,
   "category": "tech",
-  "question": "Will Quorra AI's assistant app reach number one on the Aldermoor app charts?",
+  "question": "Will Spotify announce a subscription price increase before close?",
   "marketType": "binary",
   "resolutionDays": 9,
   "showAfterDays": 7.25,
@@ -292,7 +292,7 @@
  {
   "n": 30,
   "category": "culture",
-  "question": "Will the Silverline thriller \"Midnight Ferry\" pass 20 million streams in its opening weekend?",
+  "question": "Will Ed Sheeran announce a stadium tour before this market closes?",
   "marketType": "binary",
   "resolutionDays": 3,
   "showAfterDays": 7.75,
@@ -302,7 +302,7 @@
  {
   "n": 31,
   "category": "geopolitics",
-  "question": "Will the Aldermoor foreign minister meet Sorrenmark's president in person before close?",
+  "question": "Will NATO leaders hold an extraordinary summit before this market closes?",
   "marketType": "binary",
   "resolutionDays": 10,
   "showAfterDays": 8.0,
@@ -312,7 +312,7 @@
  {
   "n": 32,
   "category": "economy",
-  "question": "Will Solvane's quarterly GDP growth estimate be 0.6% or higher?",
+  "question": "Will the European Central Bank hold rates steady at its next meeting?",
   "marketType": "binary",
   "resolutionDays": 6,
   "showAfterDays": 8.25,
@@ -322,7 +322,7 @@
  {
   "n": 33,
   "category": "politics",
-  "question": "Will the Aldermoor cabinet announce a reshuffle before this market closes?",
+  "question": "Will Anthony Albanese's government introduce a new climate bill before close?",
   "marketType": "binary",
   "resolutionDays": 4,
   "showAfterDays": 8.75,
@@ -332,7 +332,7 @@
  {
   "n": 34,
   "category": "sports",
-  "question": "Will the Westport Mariners beat the Lakeside Hawks in their next basketball meeting?",
+  "question": "Will Carlos Alcaraz win his next ATP match in straight sets?",
   "marketType": "binary",
   "resolutionDays": 8,
   "showAfterDays": 9.0,
@@ -342,7 +342,7 @@
  {
   "n": 35,
   "category": "crypto",
-  "question": "Will Lumora (LMR) outperform Nimbus Chain (NMB) over the life of this market?",
+  "question": "Will Bitcoin's market dominance rise over the life of this market?",
   "marketType": "binary",
   "resolutionDays": 2,
   "showAfterDays": 9.25,
@@ -352,7 +352,7 @@
  {
   "n": 36,
   "category": "finance",
-  "question": "Will the Solvane 50 index end this market above its starting level?",
+  "question": "Will Tesla shares gain more than 5% over the life of this market?",
   "marketType": "binary",
   "resolutionDays": 6,
   "showAfterDays": 9.5,
@@ -362,7 +362,7 @@
  {
   "n": 37,
   "category": "tech",
-  "question": "Will Boreal Space launch its Kite-2 satellite successfully on the first attempt?",
+  "question": "Will Sony announce a new PlayStation hardware revision before this market closes?",
   "marketType": "binary",
   "resolutionDays": 9,
   "showAfterDays": 10.0,
@@ -372,7 +372,7 @@
  {
   "n": 38,
   "category": "culture",
-  "question": "Will the novel \"Ashes of Calloway\" stay at number one on the Aldermoor bestseller list for a second week?",
+  "question": "Will the next Marvel film open above $100 million in the US?",
   "marketType": "binary",
   "resolutionDays": 5,
   "showAfterDays": 10.25,
@@ -382,7 +382,7 @@
  {
   "n": 39,
   "category": "geopolitics",
-  "question": "Will Sorrenmark reopen its embassy in Brenmark before close?",
+  "question": "Will Turkey and Greece hold high-level talks before this market closes?",
   "marketType": "binary",
   "resolutionDays": 7,
   "showAfterDays": 10.5,
@@ -392,7 +392,7 @@
  {
   "n": 40,
   "category": "economy",
-  "question": "Will Valdoria's inflation rate fall below 6% in the next reading?",
+  "question": "Will the 10-year US Treasury yield end this market higher than it started?",
   "marketType": "binary",
   "resolutionDays": 4,
   "showAfterDays": 11.0,
@@ -402,7 +402,7 @@
  {
   "n": 41,
   "category": "politics",
-  "question": "Will Premier Ilsa Brandt's approval rating reach 45% or higher in the next Veritas Institute poll?",
+  "question": "Will the US Senate pass a government funding bill before this market closes?",
   "marketType": "binary",
   "resolutionDays": 10,
   "showAfterDays": 11.25,
@@ -412,7 +412,7 @@
  {
   "n": 42,
   "category": "sports",
-  "question": "Will Calder Athletic striker Mateo Brisk score in his next match?",
+  "question": "Will Stephen Curry make 5 or more three-pointers in the Warriors' next game?",
   "marketType": "binary",
   "resolutionDays": 3,
   "showAfterDays": 11.5,
@@ -422,7 +422,7 @@
  {
   "n": 43,
   "category": "crypto",
-  "question": "Will Zephyr Ledger suffer a bridge exploit worth more than $5 million before close?",
+  "question": "Will BNB outperform Solana over the life of this market?",
   "marketType": "binary",
   "resolutionDays": 8,
   "showAfterDays": 11.75,
@@ -432,7 +432,7 @@
  {
   "n": 44,
   "category": "finance",
-  "question": "Will Dunmere Foods announce a share buyback program before this market closes?",
+  "question": "Will gold end this market above its starting price?",
   "marketType": "binary",
   "resolutionDays": 6,
   "showAfterDays": 12.25,
@@ -442,7 +442,7 @@
  {
   "n": 45,
   "category": "tech",
-  "question": "Will Cipherwave disclose a data breach affecting over a million users before close?",
+  "question": "Will Meta announce a new smart glasses model before this market closes?",
   "marketType": "binary",
   "resolutionDays": 7,
   "showAfterDays": 12.5,
@@ -452,7 +452,7 @@
  {
   "n": 46,
   "category": "culture",
-  "question": "Will the Golden Lantern Awards ceremony draw more than 12 million viewers?",
+  "question": "Will Rihanna release new music before close?",
   "marketType": "binary",
   "resolutionDays": 5,
   "showAfterDays": 12.75,
@@ -462,7 +462,7 @@
  {
   "n": 47,
   "category": "geopolitics",
-  "question": "Will a ceasefire between Sorrenmark and the Calder separatists be announced before close?",
+  "question": "Will the UN Security Council pass a new resolution before this market closes?",
   "marketType": "binary",
   "resolutionDays": 9,
   "showAfterDays": 13.0,
@@ -472,7 +472,7 @@
  {
   "n": 48,
   "category": "economy",
-  "question": "Will the Aldermoor manufacturing PMI come in above 50?",
+  "question": "Will US consumer confidence rise in the next release?",
   "marketType": "binary",
   "resolutionDays": 3,
   "showAfterDays": 13.5,
@@ -482,7 +482,7 @@
  {
   "n": 49,
   "category": "politics",
-  "question": "Will Senator Odette Fairweather announce a run for the Aldermoor presidency before this market closes?",
+  "question": "Will the UK Parliament pass a new housing bill before this market closes?",
   "marketType": "binary",
   "resolutionDays": 10,
   "showAfterDays": 13.75,
@@ -492,7 +492,7 @@
  {
   "n": 50,
   "category": "sports",
-  "question": "Will the Ironvale Titans score 3 or more goals in their next home game?",
+  "question": "Will Manchester City win their next Premier League match?",
   "marketType": "binary",
   "resolutionDays": 6,
   "showAfterDays": 14.0,
@@ -502,7 +502,7 @@
  {
   "n": 51,
   "category": "crypto",
-  "question": "Will Halcyon Token (HLC) be listed on a top-10 exchange before this market closes?",
+  "question": "Will Bitcoin end this market above its starting price?",
   "marketType": "binary",
   "resolutionDays": 4,
   "showAfterDays": 14.5,
@@ -512,7 +512,7 @@
  {
   "n": 52,
   "category": "finance",
-  "question": "Will the Aldermoor mark weaken more than 1.5% against the Tavorian crown before close?",
+  "question": "Will the US dollar index strengthen over the life of this market?",
   "marketType": "binary",
   "resolutionDays": 8,
   "showAfterDays": 14.75,
@@ -522,7 +522,7 @@
  {
   "n": 53,
   "category": "tech",
-  "question": "Will the Orchid Linux foundation publish release 7.0 before this market closes?",
+  "question": "Will NVIDIA announce a new GPU architecture before close?",
   "marketType": "binary",
   "resolutionDays": 2,
   "showAfterDays": 15.0,
@@ -532,7 +532,7 @@
  {
   "n": 54,
   "category": "culture",
-  "question": "Will Maribel Strand's new album debut at number one on the Tavoria Albums Chart?",
+  "question": "Will Beyoncé announce new tour dates before this market closes?",
   "marketType": "binary",
   "resolutionDays": 6,
   "showAfterDays": 15.25,
@@ -542,7 +542,7 @@
  {
   "n": 55,
   "category": "geopolitics",
-  "question": "Will the Tavoria navy hold joint exercises with the Brenmark fleet before close?",
+  "question": "Will Australia announce a new defense agreement with Japan before this market closes?",
   "marketType": "binary",
   "resolutionDays": 9,
   "showAfterDays": 15.75,
@@ -552,7 +552,7 @@
  {
   "n": 56,
   "category": "economy",
-  "question": "Will Brenmark's central bank cut its policy rate at its next meeting?",
+  "question": "Will China's GDP growth beat forecasts in the next release?",
   "marketType": "binary",
   "resolutionDays": 5,
   "showAfterDays": 16.0,
@@ -562,7 +562,7 @@
  {
   "n": 57,
   "category": "politics",
-  "question": "Will the Meridian Coalition win the Northvale provincial by-election?",
+  "question": "Will Emmanuel Macron's approval rating rise in the next monthly poll?",
   "marketType": "binary",
   "resolutionDays": 7,
   "showAfterDays": 16.25,
@@ -572,7 +572,7 @@
  {
   "n": 58,
   "category": "sports",
-  "question": "Will the winning time at the Kestrel Bay Marathon be under 2 hours 6 minutes?",
+  "question": "Will Kylian Mbappé score two or more goals in Real Madrid's next match?",
   "marketType": "binary",
   "resolutionDays": 4,
   "showAfterDays": 16.5,
@@ -582,7 +582,7 @@
  {
   "n": 59,
   "category": "crypto",
-  "question": "Will total value locked in Aurelia Swap exceed $1.4 billion at close?",
+  "question": "Will Solana gain more than 8% over the life of this market?",
   "marketType": "binary",
   "resolutionDays": 10,
   "showAfterDays": 17.0,
@@ -592,7 +592,7 @@
  {
   "n": 60,
   "category": "finance",
-  "question": "Will Orlan Motors raise its full-year delivery forecast before this market closes?",
+  "question": "Will the Dow Jones Industrial Average set a new record high before this market closes?",
   "marketType": "binary",
   "resolutionDays": 3,
   "showAfterDays": 17.25,
@@ -602,7 +602,7 @@
  {
   "n": 61,
   "category": "tech",
-  "question": "Will Stratus Mobility announce a delay to its autonomous shuttle pilot?",
+  "question": "Will Samsung unveil a new foldable phone before this market closes?",
   "marketType": "binary",
   "resolutionDays": 8,
   "showAfterDays": 17.5,
@@ -612,7 +612,7 @@
  {
   "n": 62,
   "category": "culture",
-  "question": "Will the band Glass Meridian announce a reunion tour before this market closes?",
+  "question": "Will Billie Eilish release a new single before close?",
   "marketType": "binary",
   "resolutionDays": 6,
   "showAfterDays": 18.0,
@@ -622,7 +622,7 @@
  {
   "n": 63,
   "category": "geopolitics",
-  "question": "Will the Northern Maritime Council vote to extend the Kestrel Strait patrol mandate?",
+  "question": "Will India and China hold formal border talks before this market closes?",
   "marketType": "binary",
   "resolutionDays": 7,
   "showAfterDays": 18.25,
@@ -632,7 +632,7 @@
  {
   "n": 64,
   "category": "economy",
-  "question": "Will the average Aldermoor gasoline price end this market below $1.85 per litre?",
+  "question": "Will the Bank of Japan raise interest rates at its next meeting?",
   "marketType": "binary",
   "resolutionDays": 5,
   "showAfterDays": 18.5,
@@ -642,7 +642,7 @@
  {
   "n": 65,
   "category": "politics",
-  "question": "Will the Aldermoor Electoral Commission certify the Kestrel Bay referendum result without a recount?",
+  "question": "Will Claudia Sheinbaum announce a new national security initiative before this market closes?",
   "marketType": "binary",
   "resolutionDays": 9,
   "showAfterDays": 18.75,
@@ -652,7 +652,7 @@
  {
   "n": 66,
   "category": "sports",
-  "question": "Will Skyline Racing confirm a driver change before this market closes?",
+  "question": "Will Lionel Messi score in Inter Miami's next match?",
   "marketType": "binary",
   "resolutionDays": 3,
   "showAfterDays": 19.25,
@@ -662,7 +662,7 @@
  {
   "n": 67,
   "category": "crypto",
-  "question": "Will Pivotal Protocol's governance vote to reduce staking rewards pass?",
+  "question": "Will Cardano gain more than 10% over the life of this market?",
   "marketType": "binary",
   "resolutionDays": 10,
   "showAfterDays": 19.5,
@@ -672,7 +672,7 @@
  {
   "n": 68,
   "category": "finance",
-  "question": "Will Corvane Airlines stock fall more than 5% in a single session before close?",
+  "question": "Will the S&P 500 end this market higher than it started?",
   "marketType": "binary",
   "resolutionDays": 6,
   "showAfterDays": 19.75,
@@ -682,7 +682,7 @@
  {
   "n": 69,
   "category": "tech",
-  "question": "Will Pelican Cloud report a service outage lasting more than 2 hours before close?",
+  "question": "Will Tesla launch its robotaxi service in a new city before close?",
   "marketType": "binary",
   "resolutionDays": 4,
   "showAfterDays": 20.0,
@@ -692,7 +692,7 @@
  {
   "n": 70,
   "category": "culture",
-  "question": "Will the film \"The Salt Orchard\" top the weekend box office in Aldermoor?",
+  "question": "Will Taylor Swift announce a new album before this market closes?",
   "marketType": "binary",
   "resolutionDays": 8,
   "showAfterDays": 20.5,
@@ -702,7 +702,7 @@
  {
   "n": 71,
   "category": "geopolitics",
-  "question": "Will the Calder Basin water-sharing talks end with a signed agreement?",
+  "question": "Will Canada and the United States announce a new trade deal before close?",
   "marketType": "binary",
   "resolutionDays": 2,
   "showAfterDays": 20.75,
@@ -712,7 +712,7 @@
  {
   "n": 72,
   "category": "economy",
-  "question": "Will Sorrenmark's currency reserves exceed $18 billion in the next central bank report?",
+  "question": "Will India's GDP growth for the latest quarter exceed 6.5%?",
   "marketType": "binary",
   "resolutionDays": 6,
   "showAfterDays": 21.0,
@@ -722,7 +722,7 @@
  {
   "n": 73,
   "category": "politics",
-  "question": "Will the Green Horizon Party poll above 12% in the next Alder Tribune survey?",
+  "question": "Will Javier Milei's government announce a new economic reform package before close?",
   "marketType": "binary",
   "resolutionDays": 9,
   "showAfterDays": 21.5,
@@ -732,7 +732,7 @@
  {
   "n": 74,
   "category": "sports",
-  "question": "Will Hana Kessler win her opening match at the Meridian Indoor Masters?",
+  "question": "Will Max Verstappen win the next Formula 1 Grand Prix?",
   "marketType": "binary",
   "resolutionDays": 5,
   "showAfterDays": 21.75,
@@ -742,7 +742,7 @@
  {
   "n": 75,
   "category": "crypto",
-  "question": "Will daily trading volume for Kestrel Coin (KSC) top 250 million at any point before close?",
+  "question": "Will Bitcoin drop more than 7% at any point before this market closes?",
   "marketType": "binary",
   "resolutionDays": 7,
   "showAfterDays": 22.0,
@@ -752,7 +752,7 @@
  {
   "n": 76,
   "category": "finance",
-  "question": "Will Marlow & Finch Capital complete its acquisition of Dunmere Foods before close?",
+  "question": "Will Amazon stock fall more than 3% in a single session before this market closes?",
   "marketType": "binary",
   "resolutionDays": 4,
   "showAfterDays": 22.25,
@@ -762,7 +762,7 @@
  {
   "n": 77,
   "category": "tech",
-  "question": "Will Auralink's smart glasses preorder page pass 500,000 reservations?",
+  "question": "Will SpaceX launch a Starship test flight before this market closes?",
   "marketType": "binary",
   "resolutionDays": 10,
   "showAfterDays": 22.75,
@@ -772,7 +772,7 @@
  {
   "n": 78,
   "category": "culture",
-  "question": "Will Ines Calderon-Wray's new film open above $30 million in Aldermoor?",
+  "question": "Will MrBeast gain more than 1 million new YouTube subscribers over the life of this market?",
   "marketType": "binary",
   "resolutionDays": 3,
   "showAfterDays": 23.0,
@@ -782,7 +782,7 @@
  {
   "n": 79,
   "category": "geopolitics",
-  "question": "Will the Northern Maritime Council admit Valdoria as an observer member?",
+  "question": "Will the African Union hold an emergency summit before close?",
   "marketType": "binary",
   "resolutionDays": 8,
   "showAfterDays": 23.25,
@@ -792,7 +792,7 @@
  {
   "n": 80,
   "category": "economy",
-  "question": "Will Brenmark's unemployment rate fall below 5.4% in the next release?",
+  "question": "Will the US unemployment rate rise in the next jobs report?",
   "marketType": "binary",
   "resolutionDays": 6,
   "showAfterDays": 23.75,
@@ -802,7 +802,7 @@
  {
   "n": 81,
   "category": "politics",
-  "question": "Will Governor Elias Marrow sign the Clean Rivers Bill into law before close?",
+  "question": "Will the US House of Representatives pass a major immigration bill before close?",
   "marketType": "binary",
   "resolutionDays": 7,
   "showAfterDays": 24.0,
@@ -812,7 +812,7 @@
  {
   "n": 82,
   "category": "sports",
-  "question": "Will Dario Valenti reach the final of the Torrin Open tennis tournament?",
+  "question": "Will Liverpool keep a clean sheet in their next league match?",
   "marketType": "binary",
   "resolutionDays": 5,
   "showAfterDays": 24.25,
@@ -822,7 +822,7 @@
  {
   "n": 83,
   "category": "crypto",
-  "question": "Will the Veldt Protocol mainnet upgrade go live without a postponement?",
+  "question": "Will XRP fall more than 5% at any point before this market closes?",
   "marketType": "binary",
   "resolutionDays": 9,
   "showAfterDays": 24.5,
@@ -832,7 +832,7 @@
  {
   "n": 84,
   "category": "finance",
-  "question": "Will Harrow & Vance Bank announce layoffs before close?",
+  "question": "Will JPMorgan Chase shares end this market higher than they started?",
   "marketType": "binary",
   "resolutionDays": 3,
   "showAfterDays": 25.0,
@@ -842,7 +842,7 @@
  {
   "n": 85,
   "category": "tech",
-  "question": "Will the Lumen OS 14 stable update reach all supported phones before close?",
+  "question": "Will OpenAI release a new flagship model before this market closes?",
   "marketType": "binary",
   "resolutionDays": 10,
   "showAfterDays": 25.25,
@@ -852,7 +852,7 @@
  {
   "n": 86,
   "category": "culture",
-  "question": "Will Leif Andersgaard win Best Actor at the Golden Lantern Awards?",
+  "question": "Will The Weeknd announce a new tour before this market closes?",
   "marketType": "binary",
   "resolutionDays": 6,
   "showAfterDays": 25.5,
@@ -862,7 +862,7 @@
  {
   "n": 87,
   "category": "geopolitics",
-  "question": "Will Tavoria and Brenmark sign the Harbor Accord trade agreement before this market closes?",
+  "question": "Will the United States and China announce a new trade agreement before this market closes?",
   "marketType": "binary",
   "resolutionDays": 4,
   "showAfterDays": 25.75,
@@ -872,7 +872,7 @@
  {
   "n": 88,
   "category": "economy",
-  "question": "Will the Aldermoor central bank hold its benchmark interest rate steady at its next meeting?",
+  "question": "Will the US Federal Reserve cut interest rates at its next meeting?",
   "marketType": "binary",
   "resolutionDays": 8,
   "showAfterDays": 26.25,
@@ -882,7 +882,7 @@
  {
   "n": 89,
   "category": "politics",
-  "question": "Will the Northvale provincial assembly approve the regional transit levy before this market closes?",
+  "question": "Will Volodymyr Zelensky meet Donald Trump in person before this market closes?",
   "marketType": "binary",
   "resolutionDays": 2,
   "showAfterDays": 26.5,
@@ -892,7 +892,7 @@
  {
   "n": 90,
   "category": "sports",
-  "question": "Will the Stonebridge Wolves score more than 24 points in their next rugby league match?",
+  "question": "Will Lewis Hamilton finish on the podium at the next Grand Prix?",
   "marketType": "binary",
   "resolutionDays": 6,
   "showAfterDays": 26.75,
@@ -902,7 +902,7 @@
  {
   "n": 91,
   "category": "crypto",
-  "question": "Will the Tessera Chain validator count exceed 4,000 before this market closes?",
+  "question": "Will Ethereum end this market above its starting price?",
   "marketType": "binary",
   "resolutionDays": 9,
   "showAfterDays": 27.25,
@@ -912,7 +912,7 @@
  {
   "n": 92,
   "category": "finance",
-  "question": "Will Calloway Energy report quarterly revenue above analyst estimates?",
+  "question": "Will WTI crude oil gain more than 4% over the life of this market?",
   "marketType": "binary",
   "resolutionDays": 5,
   "showAfterDays": 27.5,
@@ -922,7 +922,7 @@
  {
   "n": 93,
   "category": "tech",
-  "question": "Will Veltrix Labs unveil its next-generation edge processor before this market closes?",
+  "question": "Will Apple release a major iOS update before this market closes?",
   "marketType": "binary",
   "resolutionDays": 7,
   "showAfterDays": 27.75,
@@ -932,7 +932,7 @@
  {
   "n": 94,
   "category": "culture",
-  "question": "Will the Tavoria Book Prize shortlist include a debut novelist?",
+  "question": "Will Christopher Nolan announce his next film before this market closes?",
   "marketType": "binary",
   "resolutionDays": 4,
   "showAfterDays": 28.0,
@@ -942,7 +942,7 @@
  {
   "n": 95,
   "category": "geopolitics",
-  "question": "Will Brenmark's foreign minister attend the Aldermoor regional security summit in person?",
+  "question": "Will Japan and South Korea hold a bilateral summit before close?",
   "marketType": "binary",
   "resolutionDays": 10,
   "showAfterDays": 28.5,
@@ -952,7 +952,7 @@
  {
   "n": 96,
   "category": "economy",
-  "question": "Will Tavoria's trade surplus widen in the next monthly report?",
+  "question": "Will Germany's economy contract in the next quarterly GDP estimate?",
   "marketType": "binary",
   "resolutionDays": 3,
   "showAfterDays": 28.75,
@@ -962,7 +962,7 @@
  {
   "n": 97,
   "category": "sports",
-  "question": "Will Anton Vexley qualify on pole position at the Grand Prix of Meridian?",
+  "question": "Will Bayern Munich score 3 or more goals in their next Bundesliga match?",
   "marketType": "binary",
   "resolutionDays": 8,
   "showAfterDays": 29.0,
@@ -972,7 +972,7 @@
  {
   "n": 98,
   "category": "tech",
-  "question": "Will Helio Devices begin shipping its foldable tablet before this market closes?",
+  "question": "Will Nintendo hold a Nintendo Direct presentation before close?",
   "marketType": "binary",
   "resolutionDays": 6,
   "showAfterDays": 29.25,
@@ -982,7 +982,7 @@
  {
   "n": 99,
   "category": "geopolitics",
-  "question": "Will Brenmark impose new tariffs on Solvane steel imports before close?",
+  "question": "Will Mexico and the United States sign a new border security agreement before this market closes?",
   "marketType": "binary",
   "resolutionDays": 7,
   "showAfterDays": 29.75,
@@ -992,7 +992,7 @@
  {
   "n": 100,
   "category": "economy",
-  "question": "Will Aldermoor's housing price index show annual growth above 4%?",
+  "question": "Will the US national average gasoline price end this market lower than it started?",
   "marketType": "binary",
   "resolutionDays": 5,
   "showAfterDays": 30.0,
